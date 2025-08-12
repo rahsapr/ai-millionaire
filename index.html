@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Who Wants to Be an AI Millionaire</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;900&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<!-- Link to your new CSS file -->
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+  <div class="app">
+    <div class="panel main" id="mainPanel">
+
+      <div id="startScreen" class="start-screen fade-in">
+        <img id="startScreenImg" src="images/start-screen2.gif" alt="Who Wants to be a Gen-AI Millionaire - Play" title="Play Game">
+        <button id="playGameBtn">Play Game</button>
+        <button id="howToPlayBtn">How to Play</button>
+      </div>
+
+      <div id="gameArea" style="display:none; flex-direction: column; flex-grow: 1;">
+        <div class="topbar">
+          <div class="lifelines-container">
+            <div class="lifelines-label">LIFELINES</div>
+            <div class="lifelines" id="lifelineBar">
+              <button class="lifeline-btn" id="btn5050" data-key="5050" aria-label="50:50">
+                <img src="images/lifeline-5050.png" alt="50:50 Icon">
+                <div class="tooltip">50:50 — Remove two incorrect answers</div>
+              </button>
+              <button class="lifeline-btn" id="btnAlexa" data-key="alexa" aria-label="Ask Alexa">
+                <img src="images/lifeline-alexa.png" alt="Ask Alexa Icon">
+                <div class="tooltip">Ask Alexa</div>
+              </button>
+              <button class="lifeline-btn" id="btnFlip" data-key="flip" aria-label="Flip the Question">
+                <img src="images/lifeline-flip.png" alt="Flip Question Icon">
+                <div class="tooltip">Flip the Question</div>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div id="volumeControl" title="Adjust Volume">
+              <img src="images/low_volume.png" alt="Low Volume">
+              <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
+              <img src="images/high_volume.png" alt="High Volume">
+            </div>
+            <div id="timer" class="timer">30s</div>
+          </div>
+        </div>
+        <div class="question-card" id="questionCard">
+          <div class="q-meta">
+            <div class="left">Question <span id="qIndex">1</span> of 13</div>
+            <div class="prize" id="currentPrize">$100</div>
+          </div>
+          <div class="question" id="questionText">Loading question...</div>
+          <div class="answers" id="answers"></div>
+        </div>
+        <div class="controls">
+          <div class="hint">Select an answer to confirm.</div>
+          <div><button id="walkAwayBtn" class="walk">Walk Away</button></div>
+        </div>
+      </div>
+
+      <div id="finalOverlay" style="display:none" class="final-overlay">
+        <div class="final-card fade-in">
+          <div id="finalPrompt">Final answer?</div>
+          <div id="finalChoice">You selected: <strong>A</strong></div>
+          <div style="display:flex;gap:8px;justify-content:center">
+            <button id="finalCancel" class="btn btn-ghost">Cancel</button>
+            <button id="finalConfirm" class="btn btn-start">Confirm Answer</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="confetti" class="confetti" aria-hidden="true"></div>
+      <div id="winContainer" aria-hidden="true"></div>
+
+      <div id="modalRoot" style="display:none"></div>
+
+      <div id="endScreen" style="display:none" class="end-screen">
+        <h2 class="end-title" id="endTitle">Game Over</h2>
+        <p class="muted">You won <strong id="endPrize">$0</strong></p>
+        <div id="nameEntrySection" style="display:flex;gap:10px;align-items:center; margin-top: 12px;">
+          <input id="playerName" placeholder="Enter name for certificate" />
+          <button id="saveScoreBtn" class="btn btn-start">Save & See Certificate</button>
+        </div>
+        <div id="retroCertificate">
+          <h2 id="certTitle">🏆 GenAI Wizard Award 🏆</h2>
+          <p>This certifies that</p>
+          <h3 id="certName">Player</h3>
+          <p>Has achieved AI Mastery with winnings of</p>
+          <h3 id="certAmount">$1,000,000</h3>
+          <p>Date: <span id="certDate"></span></p>
+          <div class="cert-badge">GenAI<br/>Knowledge<br/>Series</div>
+        </div>
+        <div id="postSaveControls" style="display:none; gap:10px;align-items:center; margin-top: 24px;">
+          <button id="certBtn" class="btn btn-ghost">Get PNG Certificate</button>
+          <button id="playAgainBtn" class="btn btn-ghost">Play Again</button>
+        </div>
+        <div id="leaderboardSection" class="leaderboard-section" style="display:none;">
+          <h4 style="color:var(--muted)">Leaderboard (Top 5)</h4>
+          <div id="leaderboard" class="leaderboard"></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="ladder panel">
+      <h3>Prize Ladder</h3>
+      <small>Guaranteed at Q5 and Q10</small>
+      <div class="prize-list" id="prizeList"></div>
+    </aside>
+  </div>
+
+  <footer class="page-footer">
+    Built to help friends stay curious about GenAI. A project by <a href="https://www.linkedin.com/in/rahulsapru444/" target="_blank" rel="noopener noreferrer">Rahul Sapru</a>
+  </footer>
+
+  <audio id="sndIntro" src="sounds/intro-sound-effect_rs.mp3"></audio>
+  <audio id="sndCorrectRS" src="sounds/correct_rs.mp3"></audio>
+  <audio id="sndCongratsVoice" src="sounds/congratulations-deep-voice_rs.mp3"></audio>
+  <audio id="sndCrowdRS" src="sounds/crowd-cheering_rs.mp3"></audio>
+  <audio id="sndMilestoneRS" src="sounds/milestone-reached_rs.mp3"></audio>
+  <audio id="sndWrongRS" src="sounds/wrong-answer_rs.mp3"></audio>
+  <audio id="sndGameover" src="sounds/gameover.mp3"></audio>
+  <audio id="sndLowTime" src="sounds/lowtime3.mp3"></audio>
+  <audio id="sndSuspense" loop src="https://actions.google.com/sounds/v1/ambiences/medium_crowd_cheer.ogg"></audio>
+  <audio id="sndFinal" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+  <audio id="sndLifeline" src="https://actions.google.com/sounds/v1/cartoon/slide_whistle.ogg"></audio>
+  <audio id="sndCelebrate" src="https://actions.google.com/sounds/v1/alarms/medium_bell_ring.ogg"></audio>
+
+  <!-- Link to your new JS file -->
+  <script src="game-logic.js"></script>
+</body>
+</html>
