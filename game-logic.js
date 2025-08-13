@@ -726,5 +726,3 @@ const GENERAL_QUESTIONS = [
         hasPlayedIntro = false;
       });
     })();
-
-}); // End of DOMContentLoaded
