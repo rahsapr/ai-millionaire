@@ -103,7 +103,6 @@
           <button id="certBtn" class="btn btn-ghost">Get PNG Certificate</button>
           <button id="playAgainBtn" class="btn btn-ghost">Play Again</button>
         </div>
-        <!-- FIX: Removed the faulty `visibility: hidden;` inline style -->
         <div id="endScreenNav" style="display:flex; gap:10px; align-items:center; margin-top: 12px;">
             <button id="skipToEndBtn" class="btn btn-ghost">Skip to Home</button>
             <button id="playAgainEndBtn" class="btn btn-ghost">Play Again</button>
@@ -135,7 +134,7 @@
   <audio id="sndLifeline" src="https://actions.google.com/sounds/v1/cartoon/slide_whistle.ogg"></audio>
   <audio id="sndCelebrate" src="https://actions.google.com/sounds/v1/alarms/medium_bell_ring.ogg"></audio>
 
-  <!-- Link to your new JS file -->
-  <script src="game-logic.js"></script>
+  <!-- FIX: Only load the small initialization script -->
+  <script src="init.js"></script>
 </body>
 </html>
