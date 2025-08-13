@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {q:"Within Amazon Bedrock, what feature allows you to orchestrate tasks by giving the model access to tools and APIs?", choices:["Knowledge Bases","Provisioned Throughput","Agents","Guardrails"], a:2, difficulty:3},
         {q:"What AWS service is a fully managed platform to build, train, and deploy machine learning models at scale?", choices:["Amazon Rekognition","AWS Lambda","Amazon SageMaker","Amazon Polly"], a:2, difficulty:1},
         {q:"What is the primary purpose of 'Knowledge Bases for Amazon Bedrock'?", choices:["To store user conversations","To fine-tune a model's weights","To implement Retrieval-Augmented Generation (RAG)","To cache model responses"], a:2, difficulty:2},
-        {q:"Amazon's Titan Image Generator model includes what built-in responsible AI feature by default?", choices:["Invisible watermarks","Bias detection","Content filtering","Redaction of faces"], a:0, difficulty:3},
+        {q:"Amazon's Nova Image Generator model includes what built-in responsible AI feature by default?", choices:["Invisible watermarks","Bias detection","Content filtering","Redaction of faces"], a:0, difficulty:3},
         {q:"Amazon often describes its generative AI strategy in 'three layers'. What do these layers represent?", choices:["Small, Medium, Large models","Text, Image, Audio models","Infrastructure, Tools/FMs, Applications","Internal, Partner, Open-Source models"], a:2, difficulty:3},
         {q:"The Claude 3 family of models (Haiku, Sonnet, Opus) from Anthropic are prominently featured on which AWS service?", choices:["AWS AI Platform","Amazon Bedrock","Amazon SageMaker","EC2 P5 Instances"], a:1, difficulty:2},
         {q:"Which AWS service uses AI to automatically extract text and data from scanned documents?", choices:["Amazon S3 Select","Amazon Textract","AWS Comprehend","AWS Glue"], a:1, difficulty:1},
@@ -429,7 +429,7 @@ const ALEXA_RESPONSES = [
   "Let me put on my thinking cap... which is a distributed network of servers. They all say it's <strong>%s</strong>.",
   "I could tell you, but then I'd have to... well, nothing really. The answer is <strong>%s</strong>."
 ];
-btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Remember: Alexa will give you the right answer 80% of the time but will give you attitude 100% of the time!', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
+btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Alexa can be a bit... unpredictable and will give you the right answer 80% of time!', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
 
 btnFlip.addEventListener('click', ()=>{ if (state.usedLifelines['flip']) return; confirmLifeline('Flip the Question','Use Flip the Question?','This will replace the current question with a new one of the same difficulty.', ()=>{ state.usedLifelines['flip'] = true; btnFlip.classList.add('used'); playSound(sndLifeline); const currentQ = state.roundQuestions[state.currentIndex]; const sameDifficultyPool = ALL_QUESTIONS.filter(q => q.difficulty === currentQ.difficulty && !state.roundQuestions.some(rq => rq.q === q.q)); if (sameDifficultyPool.length > 0) { const newQ = sameDifficultyPool[Math.floor(Math.random() * sameDifficultyPool.length)]; state.roundQuestions[state.currentIndex] = newQ; setTimeout(renderQuestion, 500); } else { showModal(`<h3>No More Questions!</h3><p>Sorry, there are no more questions of that difficulty left to flip to. Your lifeline was not used.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start">Close</button></div>`); state.usedLifelines['flip'] = false; btnFlip.classList.remove('used'); } }); });
 
@@ -663,4 +663,69 @@ practiceBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); 
 const howToPlayBtn = document.getElementById('howToPlayBtn');
 howToPlayBtn.addEventListener('click', (event)=> {
   event.stopPropagation();
-  showModal(`<h3>How to Play</h3><p><strong>Play Mode:</strong> Answer 13 questions to win $1,000,000. Get one wrong, and it's game over! Use 3 lifelines to help you. Guaranteed prizes at Q5 ($1,000) and Q10 ($32,000).</p><p><strong>Practice Mode:</stro
+  showModal(`<h3>How to Play</h3><p><strong>Play Mode:</strong> Answer 13 questions to win $1,000,000. Get one wrong, and it's game over! Use 3 lifelines to help you. Guaranteed prizes at Q5 ($1,000) and Q10 ($32,000).</p><p><strong>Practice Mode:</strong> A casual way to test your knowledge. There's no timer and no penalty for wrong answers. The game ends after the last question.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Got it!</button></div>`);
+});
+howToPlayBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'View game rules & lifelines'; });
+
+
+function startGame(isPractice = false){
+  if (!hasPlayedIntro) {
+    playSound(sndIntro).then(() => { hasPlayedIntro = true; }).catch(() => { hasPlayedIntro = false; });
+  }
+  
+  state.isPracticeMode = isPractice;
+  timerEl.style.display = isPractice ? 'none' : 'block';
+  prizeListEl.style.opacity = isPractice ? '0.5' : '1';
+  document.querySelector('.ladder h3').textContent = isPractice ? 'Practice Mode' : 'Prize Ladder';
+
+  startScreen.style.display = 'none';
+  endScreen.style.display = 'none';
+  gameArea.style.display = 'flex';
+  
+  gameArea.classList.remove('fade-in');
+  void gameArea.offsetWidth;
+  gameArea.classList.add('fade-in');
+
+  nameEntrySection.style.display = 'flex';
+  postSaveControls.style.display = 'none';
+  endScreenNav.style.visibility = 'hidden';
+  retroCert.style.display = 'none';
+  leaderboardSection.style.display = 'none';
+  playerNameInput.value = '';
+  playerNameInput.placeholder = 'Enter name for certificate';
+  state.usedLifelines = {'5050':false,'alexa':false,'flip':false};
+  [btn5050, btnAlexa, btnFlip].forEach(b => b.classList.remove('used'));
+  buildRound();
+  state.currentIndex = 0;
+  state.achievedTier = 0;
+  state.finalPrizeLabel = "$0";
+  state.playing = true;
+  renderQuestion();
+  if (!isPractice) {
+    startTimer();
+  }
+}
+
+volumeSlider.addEventListener('input', (event) => {
+    state.volume = event.target.value;
+    allSounds.forEach(sound => sound.volume = state.volume);
+    // Update the visual fill of the slider track
+    document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
+});
+
+(function init(){
+  populatePrizeLadder();
+  volumeSlider.value = state.volume;
+  document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
+  allSounds.forEach(sound => sound.volume = state.volume);
+  gameArea.style.display = 'none';
+  endScreen.style.display = 'none';
+  // Try to play intro sound, browser might block it until user interaction
+  playSound(sndIntro).then(() => {
+    hasPlayedIntro = true;
+  }).catch(() => {
+    hasPlayedIntro = false;
+  });
+})();
+
+}); // End of DOMContentLoaded
