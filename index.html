@@ -13,9 +13,11 @@
 
 </head>
 <body>
+    <!-- START: REPLACE YOUR OLD <div class="app"> WITH THIS ENTIRE BLOCK -->
   <div class="app">
     <div class="panel main" id="mainPanel">
 
+      <!-- 1. The Start Screen (Lobby) -->
       <div id="startScreen" class="start-screen fade-in">
         <img id="startScreenImg" src="images/start-screen2.gif" alt="Who Wants to be a Gen-AI Millionaire - Play" title="Play Game">
         <div id="startScreenTooltip">Click to Play!</div>
@@ -24,6 +26,7 @@
         <button id="howToPlayBtn">How to Play</button>
       </div>
 
+      <!-- 2. The Main Game Area -->
       <div id="gameArea" style="display:none; flex-direction: column; flex-grow: 1;">
         <div class="topbar">
           <div class="lifelines-container">
@@ -66,6 +69,7 @@
         </div>
       </div>
 
+      <!-- 3. Overlays and Modals -->
       <div id="finalOverlay" style="display:none" class="final-overlay">
         <div class="final-card fade-in">
           <div id="finalPrompt">Final answer?</div>
@@ -80,9 +84,9 @@
       <div id="confetti" class="confetti" aria-hidden="true"></div>
       <div id="winContainer" aria-hidden="true"></div>
       <div id="practiceEndContainer" aria-hidden="true"></div>
-
       <div id="modalRoot" style="display:none"></div>
 
+      <!-- 4. The End Screen -->
       <div id="endScreen" style="display:none" class="end-screen">
         <h2 class="end-title" id="endTitle">Game Over</h2>
         <p class="muted">You won <strong id="endPrize">$0</strong></p>
@@ -103,37 +107,28 @@
           <button id="certBtn" class="btn btn-ghost">Get PNG Certificate</button>
           <button id="playAgainBtn" class="btn btn-ghost">Play Again</button>
         </div>
-                <!-- ... existing code ... -->
-        <div id="postSaveControls" style="display:none; gap:10px;align-items:center; margin-top: 24px;">
-          <button id="certBtn" class="btn btn-ghost">Get PNG Certificate</button>
-          <button id="playAgainBtn" class="btn btn-ghost">Play Again</button>
-        </div>
-        
-        <!-- START: PASTE THIS MISSING CODE BLOCK HERE -->
+        <!-- This is the leaderboard section we fixed in the last step -->
         <div id="leaderboardSection" class="leaderboard-section" style="display: none;">
             <h4>🏆 Top 5 High Scores 🏆</h4>
             <div id="leaderboard"></div>
         </div>
-        <!-- END: PASTE THIS MISSING CODE BLOCK HERE -->
-
         <div id="endScreenNav" style="display:flex; gap:10px; align-items:center; margin-top: 12px;">
             <button id="skipToEndBtn" class="btn btn-ghost">Skip to Home</button>
             <button id="playAgainEndBtn" class="btn btn-ghost">Play Again</button>
         </div>
       </div>
-        <div id="endScreenNav" style="display:flex; gap:10px; align-items:center; margin-top: 12px;">
-            <button id="skipToEndBtn" class="btn btn-ghost">Skip to Home</button>
-            <button id="playAgainEndBtn" class="btn btn-ghost">Play Again</button>
-        </div>
-      </div>
-    </div>
 
+    </div> <!-- This closing div for the main panel is critical -->
+
+    <!-- 5. The Prize Ladder (Second Column) -->
     <aside class="ladder panel">
       <h3>Prize Ladder</h3>
       <small>Guaranteed at Q5 and Q10</small>
       <div class="prize-list" id="prizeList"></div>
     </aside>
+
   </div>
+  <!-- END: THE REPLACEMENT BLOCK ENDS HERE -->
 
   <footer class="page-footer">
     Built to help friends stay curious about GenAI. A project by <a href="https://www.linkedin.com/in/rahulsapru444/" target="_blank" rel="noopener noreferrer">Rahul Sapru</a>
