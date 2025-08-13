@@ -18,7 +18,9 @@
 
       <div id="startScreen" class="start-screen fade-in">
         <img id="startScreenImg" src="images/start-screen2.gif" alt="Who Wants to be a Gen-AI Millionaire - Play" title="Play Game">
+        <div id="startScreenTooltip">Click to Play!</div>
         <button id="playGameBtn">Play Game</button>
+        <button id="practiceBtn">Practice</button>
         <button id="howToPlayBtn">How to Play</button>
       </div>
 
@@ -77,6 +79,7 @@
 
       <div id="confetti" class="confetti" aria-hidden="true"></div>
       <div id="winContainer" aria-hidden="true"></div>
+      <div id="practiceEndContainer" aria-hidden="true"></div>
 
       <div id="modalRoot" style="display:none"></div>
 
@@ -100,9 +103,10 @@
           <button id="certBtn" class="btn btn-ghost">Get PNG Certificate</button>
           <button id="playAgainBtn" class="btn btn-ghost">Play Again</button>
         </div>
-        <div id="leaderboardSection" class="leaderboard-section" style="display:none;">
-          <h4 style="color:var(--muted)">Leaderboard (Top 5)</h4>
-          <div id="leaderboard" class="leaderboard"></div>
+        <!-- NEW BUTTONS ON END SCREEN -->
+        <div id="endScreenNav" style="display:flex; gap:10px; align-items:center; margin-top: 12px; visibility: hidden;">
+            <button id="skipToEndBtn" class="btn btn-ghost">Skip to Home</button>
+            <button id="playAgainEndBtn" class="btn btn-ghost">Play Again</button>
         </div>
       </div>
     </div>
