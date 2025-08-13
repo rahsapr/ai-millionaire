@@ -1,135 +1,137 @@
-/* -------------------- GAME DATA -------------------- */
-const PRIZES = [
-  {tier:13,label:"$1,000,000"}, {tier:12,label:"$125,000"}, {tier:11,label:"$64,000"},
-  {tier:10,label:"$32,000",guaranteed:true}, {tier:9,label:"$16,000"}, {tier:8,label:"$8,000"},
-  {tier:7,label:"$4,000"}, {tier:6,label:"$2,000"}, {tier:5,label:"$1,000",guaranteed:true},
-  {tier:4,label:"$500"}, {tier:3,label:"$300"}, {tier:2,label:"$200"}, {tier:1,label:"$100"}
-];
+document.addEventListener('DOMContentLoaded', () => {
 
-const AMAZON_QUESTIONS = [
-    {q:"Amazon's own family of foundation models, available in Bedrock, is named what?", choices:["Olympus","Aurora","Nova","Meridian"], a:2, difficulty:1},
-    {q:"Which AWS service is an AI-powered coding companion, similar to GitHub Copilot?", choices:["CodeCatalyst","Cloud9","CodeWhisperer","CodeDeploy"], a:2, difficulty:1},
-    {q:"What is Amazon's conversational AI assistant for businesses, designed to be an 'expert on your business'?", choices:["Alexa for Business","Amazon Expert","Amazon Q","AWS Concierge"], a:2, difficulty:1},
-    {q:"What is Amazon Bedrock's primary function?", choices:["A data streaming service","A serverless database","A service to build with foundation models","A cloud-based IDE"], a:2, difficulty:1},
-    {q:"AWS's custom-designed chip optimized for cost-effective AI model *inference* is called:", choices:["Trainium","Graviton","Inferentia","QuantumLeap"], a:2, difficulty:2},
-    {q:"AWS's custom-designed chip for high-performance AI model *training* is called:", choices:["Trainium","Graviton","Anapurna","Inferentia"], a:0, difficulty:2},
-    {q:"In 2023-2024, Amazon made a multi-billion dollar investment in which major AI startup, making their models available on Bedrock?", choices:["OpenAI","Cohere","Mistral AI","Anthropic"], a:3, difficulty:2},
-    {q:"Within Amazon Bedrock, what feature allows you to orchestrate tasks by giving the model access to tools and APIs?", choices:["Knowledge Bases","Provisioned Throughput","Agents","Guardrails"], a:2, difficulty:3},
-    {q:"What AWS service is a fully managed platform to build, train, and deploy machine learning models at scale?", choices:["Amazon Rekognition","AWS Lambda","Amazon SageMaker","Amazon Polly"], a:2, difficulty:1},
-    {q:"What is the primary purpose of 'Knowledge Bases for Amazon Bedrock'?", choices:["To store user conversations","To fine-tune a model's weights","To implement Retrieval-Augmented Generation (RAG)","To cache model responses"], a:2, difficulty:2},
-    {q:"Amazon's Titan Image Generator model includes what built-in responsible AI feature by default?", choices:["Invisible watermarks","Bias detection","Content filtering","Redaction of faces"], a:0, difficulty:3},
-    {q:"Amazon often describes its generative AI strategy in 'three layers'. What do these layers represent?", choices:["Small, Medium, Large models","Text, Image, Audio models","Infrastructure, Tools/FMs, Applications","Internal, Partner, Open-Source models"], a:2, difficulty:3},
-    {q:"The Claude 3 family of models (Haiku, Sonnet, Opus) from Anthropic are prominently featured on which AWS service?", choices:["AWS AI Platform","Amazon Bedrock","Amazon SageMaker","EC2 P5 Instances"], a:1, difficulty:2},
-    {q:"Which AWS service uses AI to automatically extract text and data from scanned documents?", choices:["Amazon S3 Select","Amazon Textract","AWS Comprehend","AWS Glue"], a:1, difficulty:1},
-    {q:"If you wanted to turn text into lifelike speech using an AI service on AWS, which would you use?", choices:["Amazon Speechify","Amazon Lex","Amazon Polly","Amazon Transcribe"], a:2, difficulty:1},
-    {q:"What feature in SageMaker provides access to a broad selection of pre-trained models, including many open-source foundation models?", choices:["SageMaker JumpStart","SageMaker Pipelines","SageMaker Studio","SageMaker Canvas"], a:0, difficulty:2},
-    {q:"When using Amazon Q, what allows it to connect to your company's specific data sources like S3, Slack, or Salesforce?", choices:["IAM Roles","VPC Endpoints","Connectors","DataSync"], a:2, difficulty:2},
-    {q:"AWS's AI-powered service for identifying objects, people, text, and activities in images and videos is called:", choices:["Amazon Lookout","Amazon Rekognition","AWS Panorama","Amazon Inspector"], a:1, difficulty:1}
-];
+    /* -------------------- GAME DATA -------------------- */
+    const PRIZES = [
+      {tier:13,label:"$1,000,000"}, {tier:12,label:"$125,000"}, {tier:11,label:"$64,000"},
+      {tier:10,label:"$32,000",guaranteed:true}, {tier:9,label:"$16,000"}, {tier:8,label:"$8,000"},
+      {tier:7,label:"$4,000"}, {tier:6,label:"$2,000"}, {tier:5,label:"$1,000",guaranteed:true},
+      {tier:4,label:"$500"}, {tier:3,label:"$300"}, {tier:2,label:"$200"}, {tier:1,label:"$100"}
+    ];
 
-const GENERAL_QUESTIONS = [
-// --- NEW, HIGH-QUALITY QUESTIONS ---
-{q:"What is the key difference between AWS Trainium and Inferentia chips?", choices:["Trainium is high-cost; Inferentia is low-cost.","Trainium is for text; Inferentia is for images.","Trainium is for model training; Inferentia is for inference.","Trainium uses ARM; Inferentia uses x86 architecture."], a:2, difficulty:2},
-{q:"In a Mixture-of-Experts (MoE) model, what does the 'gating network' do?", choices:["Loads all model parameters into memory.","Routes each input token to the best expert.","Applies the final activation function to the output.","Aggregates the final outputs from all experts."], a:1, difficulty:3},
-{q:"What's the main trade-off between a long context window and RAG?", choices:["RAG has fresh data; long context reasons over provided text.","Long context is open-source; RAG is proprietary.","RAG is for creativity; long context for facts.","Long context is more secure; RAG is vulnerable."], a:0, difficulty:2},
-{q:"What is the primary advantage of State Space Models (SSMs) like Mamba?", choices:["They are inherently multimodal from the start.","They avoid quadratic complexity, scaling linearly.","They use fewer parameters for easier fine-tuning.","They require much less training data."], a:1, difficulty:3},
-{q:"What do 'Action Groups' do in an Amazon Bedrock Agent?", choices:["Filter for harmful or inappropriate content.","Manage the agent's conversation history.","Group related APIs and functions the agent can use.","Define the agent's personality and tone."], a:2, difficulty:2},
-{q:"What is the main reason for using synthetic data in AI training?", choices:["To create large, diverse, and privacy-safe datasets.","To ensure the model only trains on text.","To completely eliminate the need for data labeling.","It downloads faster than real-world data."], a:0, difficulty:2},
-{q:"What is the goal of post-training quantization for LLMs on edge devices?", choices:["To teach the model a new skill post-training.","To add a layer of encryption to the model.","To reduce model size and speed up inference.","To increase the model's factual accuracy."], a:2, difficulty:2},
-{q:"The ReAct framework for AI agents combines what two capabilities?", choices:["Reasoning (thought) and taking actions (tools).","Creativity and factual recall.","Language understanding and generation.","User input and output formatting."], a:0, difficulty:2},
-{q:"What problem do multi-agent frameworks like AutoGen solve?", choices:["Enabling specialized agents to collaborate on complex problems.","Reducing the computational cost of a single agent.","Creating a universal communication protocol for all AIs.","Allowing AI agents to run completely offline."], a:0, difficulty:3},
-{q:"Why use 'Provisioned Throughput' for a model in Amazon Bedrock?", choices:["To get a lower, variable price per token.","To guarantee consistent performance and throughput.","To get early access to experimental models.","To allow the model to be fine-tuned."], a:1, difficulty:2},
-{q:"What is the core principle of Constitutional AI?", choices:["The model critiques its own responses based on principles.","The model is trained only with direct human feedback.","The model's training data is heavily filtered.","The model has hard-coded rules against specific topics."], a:0, difficulty:3},
-{q:"Why is the 'Needle in a Haystack' test important for LLMs?", choices:["It tests the model's creative writing ability.","It assesses recall of a fact in a long document.","It measures the model's raw processing speed.","It evaluates the model's resistance to attacks."], a:1, difficulty:2},
-{q:"What is a key focus for Amazon Q in enterprise settings?", choices:["Generating marketing and social media copy.","Creating realistic 3D models and environments.","Automating multi-step business workflows.","Composing original musical scores."], a:2, difficulty:2},
-{q:"What is the main purpose of digital watermarking in AI-generated images?", choices:["To embed copyright information to prevent theft.","To make AI-generated content identifiable as synthetic.","To increase the visual quality of the image.","To reduce the image's file size."], a:1, difficulty:2},
-{q:"What is the main goal of speculative decoding for LLM inference?", choices:["Predicting the user's next question in advance.","Running multiple models and having them vote.","Using a 'draft' model to accelerate a larger one.","Caching common user queries for instant answers."], a:2, difficulty:3},
-{q:"What is a key step towards reliable 'tool use' in AI agents?", choices:["The ability to browse the entire internet.","The ability to run on low-power mobile devices.","The ability to correctly understand and use APIs.","The ability to generate human-like conversation."], a:2, difficulty:2},
-{q:"What distinguishes 'Graph RAG' from traditional vector-based RAG?", choices:["Graph RAG only works with image data.","Graph RAG does not require a vector database.","Graph RAG uses relationships in a knowledge graph.","Graph RAG is much faster but less accurate."], a:2, difficulty:3},
-{q:"What is the main purpose of 'Guardrails for Amazon Bedrock'?", choices:["To automatically translate the model's output.","To protect the model from denial-of-service attacks.","To define and enforce safety and topic policies.","To route requests to the cheapest available model."], a:2, difficulty:2},
-{q:"What is the primary advantage of using a Small Language Model (SLM)?", choices:["They do not require any training data.","Lower cost, faster performance, and high accuracy on niche tasks.","They are inherently more secure than large models.","They are more creative than large models."], a:1, difficulty:2},
-{q:"Combining Bedrock Agents with AWS Step Functions helps with what?", choices:["Automatically fine-tuning the foundation model.","Orchestrating complex, long-running, and stateful tasks.","Visualizing the agent's internal thought process.","Providing a serverless environment for code execution."], a:1, difficulty:3},
-{q:"What is the main technical challenge for true multimodal AI?", choices:["The slow speed of internet connections.","Finding a common representation space for all modalities.","The high cost of GPUs for processing video.","The lack of sufficient video and audio data."], a:1, difficulty:3},
-{q:"What is the primary goal of Context Engineering in GenAI?", choices:["To improve the speed of AI model training.","To strategically populate an AI model's context window with relevant information.","To develop new AI model architectures.","To reduce the computational cost of AI models."], a:1, difficulty:2},
-{q:"Which of the following is a key benefit of effective Context Engineering?", choices:["Optimized AI agent performance.","Increased irrelevant data processing.","Decreased model accuracy.","Reduced need for data pre-processing."], a:0, difficulty:2},
-{q:"Context Engineering is described as the discipline of designing and managing what?", choices:["User interfaces for AI applications.","Hardware infrastructure for AI.","AI model parameters.","Structures, signals, and affordances that modulate cognition and behavior."], a:3, difficulty:3},
-{q:"In the context of AI agents, what does Context Engineering aim to prevent?", choices:["Overfitting of models.","Underutilization of computational resources.","Flooding agents with irrelevant data.","Lack of diverse training data."], a:2, difficulty:2},
-{q:"What is the primary purpose of the Model Context Protocol (MCP)?", choices:["To create new AI programming languages.","To standardize how applications provide context to large language models (LLMs).","To develop advanced AI hardware.","To manage AI model training datasets."], a:1, difficulty:2},
-{q:"MCP is often compared to what common technology for its role in enabling seamless integration?", choices:["Wi-Fi router.","USB-C port.","Ethernet cable.","Bluetooth connection."], a:1, difficulty:3},
-{q:"How does MCP facilitate real-time data connection for LLMs?", choices:["By requiring manual data input from users.","By using a proprietary data format.","By storing all data within the LLM itself.","By connecting LLMs directly to enterprise data sources."], a:3, difficulty:2},
-{q:"What is a key benefit of MCP in terms of AI interactions?", choices:["It simplifies the process of AI model deployment.","It ensures secure and reliable interactions between AI models and data.","It reduces the need for internet connectivity for AI.","It limits the types of data AI can access."], a:1, difficulty:2},
-{q:"Which of the following best describes MCP in the context of AI agents?", choices:["A standardized way for AI agents to plug into tools, data, and services.","A method for training AI agents.","A framework for evaluating AI agent performance.","A protocol for inter-agent communication."], a:0, difficulty:3},
-{q:"Research on GenAI usage patterns identifies which two distinct types?", choices:["Developer and End-user.","Analyst and Strategist.","Intellectual partner and information browser.","Creator and Consumer."], a:2, difficulty:2},
-{q:"What factor significantly impacts GenAI adoption, according to research?", choices:["Model size.","Need for uniqueness.","Hardware specifications.","Programming language used."], a:1, difficulty:2},
-{q:"What role does trust play in GenAI adoption?", choices:["It is a primary barrier.","It is only relevant for developers.","It has no impact.","It is a mediating factor."], a:3, difficulty:2},
-{q:"What do consumer mindsets about GenAI emphasize for driving value?", choices:["Complex features.","Minimal user interaction.","Transparency and consistent service.","High performance."], a:2, difficulty:1},
-{q:"Which prompting technique involves providing no examples to the model?", choices:["Few-shot prompting.","Chain of Thought prompting.","Zero-shot prompting.","Meta prompting."], a:2, difficulty:1},
-{q:"What does Chain of Thought (CoT) prompting encourage the model to do?", choices:["Focus only on factual information.","Ignore previous turns in conversation.","Generate shorter responses.","Explain its reasoning step-by-step."], a:3, difficulty:1},
-{q:"What is the purpose of Meta Prompting?", choices:["To generate random outputs.","To limit the model's creativity.","To guide the model in generating other prompts.","To simplify model architecture."], a:2, difficulty:3},
-{q:"What best practice involves assigning a specific persona to the AI?", choices:["Iterative refinement.","Self-correction.","Role assignment.","Specificity."], a:2, difficulty:1},
-{q:"What is the goal of iterative refinement in prompt engineering?", choices:["To continuously test and refine prompts.","To increase model training time.","To reduce the number of prompts needed.","To automate prompt generation."], a:0, difficulty:1},
-{q:"Why is GenAI evaluation essential?", choices:["To simplify deployment.","To measure performance and reliability.","To reduce development costs.","To increase model size."], a:1, difficulty:1},
-{q:"Which evaluation method involves human evaluators comparing model outputs?", choices:["Automated metrics.","Task-specific evaluation.","Benchmarking.","Pairwise comparison."], a:3, difficulty:2},
-{q:"What do automated metrics like ROUGE and BLEU assess?", choices:["User interface design.","Hardware utilization.","Fluency, coherence, and relevance.","Model training speed."], a:2, difficulty:3},
-{q:"What is the purpose of benchmarking in GenAI evaluation?", choices:["To optimize model parameters.","To identify security vulnerabilities.","To compare models against each other.","To generate new datasets."], a:2, difficulty:1},
-{q:"What does business impact assessment evaluate?", choices:["Real-world impact on business metrics.","Ethical implications of AI.","Technical complexity of the model.","Number of users adopting the AI."], a:0, difficulty:2},
-{q:"What does GenAI governance aim to establish?", choices:["Faster data processing techniques.","New programming languages.","Automated content generation.","Responsible and ethical deployment frameworks."], a:3, difficulty:2},
-{q:"What do security evaluations assess in GenAI?", choices:["Training data size.","Model accuracy.","User satisfaction.","Vulnerabilities to prompt injection."], a:3, difficulty:2},
-{q:"Which of the following is a key aspect of GenAI evaluation?", choices:["Reducing computational resources.","Automating model deployment.","Assessing factual accuracy.","Increasing model complexity."], a:2, difficulty:1},
-{q:"What is a common challenge in GenAI evaluation?", choices:["Insufficient training data.","Lack of computing power.","Subjectivity in human judgment.","Slow model inference."], a:2, difficulty:2},
-{q:"What is the ultimate goal of GenAI evaluation?", choices:["To eliminate human intervention.","To achieve perfect model performance.","To create self-improving AI.","To ensure trustworthy and effective AI systems."], a:3, difficulty:1},
-{q:"What does 'LLM' commonly stand for in AI?", choices:["Large Language Model","Linear Learning Matrix","Local Latent Model","Low-Level ML"], a:0, difficulty:1},
-{q:"What is 'prompt engineering' primarily concerned with?", choices:["Building GPUs","Designing training hardware","Improving RLHF algorithms","Tuning prompts to get better outputs"], a:3, difficulty:1},
-{q:"Which core architecture is used by many modern language models like GPT?", choices:["Convolutional Networks","Recurrent Neural Networks","Transformers","Decision Trees"], a:2, difficulty:1},
-{q:"What is a 'hallucination' in LLM output?", choices:["An incorrect but plausible-sounding answer","A model training phase","A visualization tool","A dataset type"], a:0, difficulty:1},
-{q:"'RLHF' stands for which training technique?", choices:["Reinforcement Learning from Human Feedback","Randomized Linear Heuristic Fit","Recurrent Latent Human Function","Rapid Learning Hybrid Framework"], a:0, difficulty:1},
-{q:"What does 'tokens' refer to in LLMs?", choices:["GPU memory blocks","Neural network weights","Units of text the model processes","Encryption keys"], a:2, difficulty:1},
-{q:"What is 'fine-tuning' in LLMs?", choices:["Adjusting hyperparameters only","Training a model further on specific data","Converting model to binary","Compressing weights"], a:1, difficulty:1},
-{q:"What is a 'checkpoint' in model development?", choices:["A saved model state","A dataset split method","A cloud provider","A type of GPU"], a:0, difficulty:1},
-{q:"'AGI' stands for which term?", choices:["Autonomous Grid Interface","Augmented Generative Innovation","Applied Gradient Integration","Artificial General Intelligence"], a:3, difficulty:1},
-{q:"Which paper introduced the Transformer architecture?", choices:["Playing Atari with Deep Reinforcement Learning","Generative Adversarial Networks","ImageNet: A large-scale hierarchical image database","Attention Is All You Need"], a:3, difficulty:2},
-{q:"What core mechanism enables Transformers to weigh importance between tokens?", choices:["Self-attention","Convolution","Backpropagation","Dropout"], a:0, difficulty:2},
-{q:"What is RLHF primarily used to achieve in LLMs?", choices:["Compress model weights","Align model outputs with human preferences","Scale model size","Speed up inference times"], a:1, difficulty:2},
-{q:"What is 'inference' in the context of LLMs?", choices:["The model producing outputs for inputs","Data collection practice","Training with labeled data","Model sharding technique"], a:0, difficulty:2},
-{q:"What is the primary benefit of model parallelism?", choices:["Improves model's reasoning","Allows training very large models across devices","Prevents hallucinations","Improves interpretability"], a:1, difficulty:2},
-{q:"What is 'temperature' in language model sampling?", choices:["GPU thermal limit","A training hyperparameter for learning rate","A sampling parameter that affects randomness","Size of the model's context window"], a:2, difficulty:2},
-{q:"What does 'few-shot' prompting mean?", choices:["Giving the model a few small hints after the answer","Providing a few examples in the prompt","Training on a few GPUs","Limiting outputs to a few tokens"], a:1, difficulty:2},
-{q:"What is a 'decoder-only' Transformer like GPT primarily designed for?", choices:["Text generation","Image segmentation","Speech recognition","Feature extraction"], a:0, difficulty:2},
-{q:"Which technique helps reduce hallucinations by grounding models in tools or retrieval?", choices:["Gradient clipping","Retrieval-Augmented Generation (RAG)","Weight decay","Dropout"], a:1, difficulty:2},
-{q:"What does 'tokenization' do?", choices:["Converts GPU tensors to CPU","Removes stopwords automatically","Encrypts data before training","Transforms text into discrete tokens"], a:3, difficulty:2},
-{q:"What is 'parameter count' generally used to describe for LLMs?", choices:["Number of GPUs used","Inference latency","Size of model weights","Number of training steps"], a:2, difficulty:2},
-{q:"What is 'alignment' in AI safety terms?", choices:["Aligning datasets' formats","Ensuring models behave according to human values/preferences","Tuning hardware to model scale","Converting models to edge devices"], a:1, difficulty:2},
-{q:"Which core idea helps attention scale on long sequences?", choices:["Full attention scales better","Convolution","Sparse attention can improve efficiency","Neither"], a:2, difficulty:3},
-{q:"What is 'distillation' in model compression?", choices:["Training a smaller model to mimic a larger one","A data collection process","A special GPU cooling method","A visualization technique"], a:0, difficulty:2},
-{q:"What does 'context window' refer to for an LLM?", choices:["Number of GPUs available","Learning rate schedule","Amount of text (tokens) model can attend to","Batch size"], a:2, difficulty:2},
-{q:"What drawback can larger LLMs have if unmitigated?", choices:["Slower training convergence","More likelihood to hallucinate if unaligned","They no longer generalize","They cease being probabilistic"], a:1, difficulty:2},
-{q:"What does 'safety fine-tuning' typically involve?", choices:["Adding adversarial GPUs","Training on curated data + human feedback","Removing attention layers","Converting models to CPU"], a:1, difficulty:2},
-{q:"Which is an example of a multimodal AI system?", choices:["A model handling text+images (e.g., GPT-4 multimodal)","RNN","SVM","Linear regression"], a:0, difficulty:2},
-{q:"What is 'zero-shot' capability?", choices:["Solve tasks without examples","Train without data","Zero inference cost","Run with zero latency"], a:0, difficulty:2},
-{q:"What is 'instruction tuning' focused on?", choices:["Optimizing GPU ISA","Fine-tuning models with instruction examples","Hardware calibration","Data sanitation"], a:1, difficulty:2},
-{q:"What does 'hallucination rate' measure?", choices:["Refusal percentage","Frequency of incorrect plausible outputs","Training loss","Parameter sparsity"], a:1, difficulty:2},
-{q:"Which field studies interpretability?", choices:["Explainable AI (XAI)","GANs","RL","Cloud orchestration"], a:0, difficulty:2},
-{q:"What is 'prompt injection'?", choices:["Optimizing prompts for speed","A vulnerability that manipulates model behavior","Data augmentation","Activation function"], a:1, difficulty:2},
-{q:"Which architecture is used for encoder-decoder tasks?", choices:["Encoder-only","Decoder-only","Encoder-decoder (T5)","Convolution-only"], a:2, difficulty:2},
-{q:"What is 'alignment tax'?", choices:["Literal tax","Trade-offs between capability & alignment","Taxes on data centers","GPU tariffs"], a:1, difficulty:3},
-{q:"How to keep LLMs up-to-date without retraining?", choices:["Change vocabulary","Use retrieval / tools","Increase params","Lower temperature"], a:1, difficulty:3},
-{q:"'Mixture of Experts' aims to:", choices:["Route inputs to subsets of parameters to scale efficiently","Blend human experts","Cause hallucinations","Compress datasets"], a:0, difficulty:3},
-{q:"Which concept produces intermediate reasoning steps?", choices:["Chain-of-thought prompting","Temperature annealing","Dropout scheduling","Weight decay"], a:0, difficulty:3},
-{q:"Agentic AI risk include:", choices:["Unintended autonomous actions","Lower inference cost","Better tokenization","Faster fine-tuning"], a:0, difficulty:3},
-{q:"What is 'safety alignment' testing about?", choices:["Energy efficiency","Ensuring constraints & avoid harm","GPU utilization","Licensing"], a:1, difficulty:3},
-{q:"Why quantize an LLM?", choices:["Increase precision","Reduce model size for inference","Increase hallucinations","Add tokens"], a:1, difficulty:3},
-{q:"What is 'catastrophic forgetting'?", choices:["Losing earlier knowledge when learning new tasks","GPU failure","Dataset metric","Overfitting sign"], a:0, difficulty:3},
-{q:"Which safety approach uses model self-critique?", choices:["Self-critique / auditing","Dropout","Backprop","Tokenization"], a:0, difficulty:3},
-{q:"What does context length trade off against?", choices:["GPU vendor","Memory & compute cost","Accuracy always up","Number of layers"], a:1, difficulty:3},
-{q:"How reduce bias in model outputs?", choices:["Data curation & human feedback","Increase temperature","Use smaller models only","Remove tokenizer"], a:0, difficulty:3},
-{q:"What is 'red teaming' in AI?", choices:["Adversarial evaluation to find failure modes","Server hacking","GPU cluster","Compression technique"], a:0, difficulty:3},
-{q:"Tool use example by language models?", choices:["Calling a search API to fetch facts","Change own weights","Alter hardware","Decrease context"], a:0, difficulty:3},
-{q:"Which area makes LLM outputs explainable?", choices:["Explainable AI (XAI)","GANs","Reinforcement Learning","Cloud orchestration"], a:0, difficulty:3},
-{q:"Which bottleneck limits huge LLM training throughput?", choices:["Network & interconnect bandwidth","Model architecture","Tokenization speed","Font rendering"], a:0, difficulty:3},
-{q:"What is 'sparse attention' useful for?", choices:["Reduce compute for long contexts","Increase hallucinations","Slow inference","Simulate GPUs"], a:0, difficulty:3},
-{q:"What is 'overfitting'?", choices:["Good on training, poor on unseen","Too many GPUs","Hardware failure","Data augmentation"], a:0, difficulty:2},
-{q:"How to update LLM factuality without retraining?", choices:["Retrieval/tools/adapters","More params","Raise temperature","Smaller batch"], a:0, difficulty:3},
-{q:"Which improves LLM factuality?", choices:["RAG, grounding & human feedback","Only more tokens","Only more GPUs","Only higher temperature"], a:0, difficulty:3}
+    const AMAZON_QUESTIONS = [
+        {q:"Amazon's own family of foundation models, available in Bedrock, is named what?", choices:["Olympus","Aurora","Nova","Meridian"], a:2, difficulty:1},
+        {q:"Which AWS service is an AI-powered coding companion, similar to GitHub Copilot?", choices:["CodeCatalyst","Cloud9","CodeWhisperer","CodeDeploy"], a:2, difficulty:1},
+        {q:"What is Amazon's conversational AI assistant for businesses, designed to be an 'expert on your business'?", choices:["Alexa for Business","Amazon Expert","Amazon Q","AWS Concierge"], a:2, difficulty:1},
+        {q:"What is Amazon Bedrock's primary function?", choices:["A data streaming service","A serverless database","A service to build with foundation models","A cloud-based IDE"], a:2, difficulty:1},
+        {q:"AWS's custom-designed chip optimized for cost-effective AI model *inference* is called:", choices:["Trainium","Graviton","Inferentia","QuantumLeap"], a:2, difficulty:2},
+        {q:"AWS's custom-designed chip for high-performance AI model *training* is called:", choices:["Trainium","Graviton","Anapurna","Inferentia"], a:0, difficulty:2},
+        {q:"In 2023-2024, Amazon made a multi-billion dollar investment in which major AI startup, making their models available on Bedrock?", choices:["OpenAI","Cohere","Mistral AI","Anthropic"], a:3, difficulty:2},
+        {q:"Within Amazon Bedrock, what feature allows you to orchestrate tasks by giving the model access to tools and APIs?", choices:["Knowledge Bases","Provisioned Throughput","Agents","Guardrails"], a:2, difficulty:3},
+        {q:"What AWS service is a fully managed platform to build, train, and deploy machine learning models at scale?", choices:["Amazon Rekognition","AWS Lambda","Amazon SageMaker","Amazon Polly"], a:2, difficulty:1},
+        {q:"What is the primary purpose of 'Knowledge Bases for Amazon Bedrock'?", choices:["To store user conversations","To fine-tune a model's weights","To implement Retrieval-Augmented Generation (RAG)","To cache model responses"], a:2, difficulty:2},
+        {q:"Amazon's Titan Image Generator model includes what built-in responsible AI feature by default?", choices:["Invisible watermarks","Bias detection","Content filtering","Redaction of faces"], a:0, difficulty:3},
+        {q:"Amazon often describes its generative AI strategy in 'three layers'. What do these layers represent?", choices:["Small, Medium, Large models","Text, Image, Audio models","Infrastructure, Tools/FMs, Applications","Internal, Partner, Open-Source models"], a:2, difficulty:3},
+        {q:"The Claude 3 family of models (Haiku, Sonnet, Opus) from Anthropic are prominently featured on which AWS service?", choices:["AWS AI Platform","Amazon Bedrock","Amazon SageMaker","EC2 P5 Instances"], a:1, difficulty:2},
+        {q:"Which AWS service uses AI to automatically extract text and data from scanned documents?", choices:["Amazon S3 Select","Amazon Textract","AWS Comprehend","AWS Glue"], a:1, difficulty:1},
+        {q:"If you wanted to turn text into lifelike speech using an AI service on AWS, which would you use?", choices:["Amazon Speechify","Amazon Lex","Amazon Polly","Amazon Transcribe"], a:2, difficulty:1},
+        {q:"What feature in SageMaker provides access to a broad selection of pre-trained models, including many open-source foundation models?", choices:["SageMaker JumpStart","SageMaker Pipelines","SageMaker Studio","SageMaker Canvas"], a:0, difficulty:2},
+        {q:"When using Amazon Q, what allows it to connect to your company's specific data sources like S3, Slack, or Salesforce?", choices:["IAM Roles","VPC Endpoints","Connectors","DataSync"], a:2, difficulty:2},
+        {q:"AWS's AI-powered service for identifying objects, people, text, and activities in images and videos is called:", choices:["Amazon Lookout","Amazon Rekognition","AWS Panorama","Amazon Inspector"], a:1, difficulty:1}
+    ];
+
+    const GENERAL_QUESTIONS = [
+    // --- NEW, HIGH-QUALITY QUESTIONS ---
+    {q:"What is the key difference between AWS Trainium and Inferentia chips?", choices:["Trainium is high-cost; Inferentia is low-cost.","Trainium is for text; Inferentia is for images.","Trainium is for model training; Inferentia is for inference.","Trainium uses ARM; Inferentia uses x86 architecture."], a:2, difficulty:2},
+    {q:"In a Mixture-of-Experts (MoE) model, what does the 'gating network' do?", choices:["Loads all model parameters into memory.","Routes each input token to the best expert.","Applies the final activation function to the output.","Aggregates the final outputs from all experts."], a:1, difficulty:3},
+    {q:"What's the main trade-off between a long context window and RAG?", choices:["RAG has fresh data; long context reasons over provided text.","Long context is open-source; RAG is proprietary.","RAG is for creativity; long context for facts.","Long context is more secure; RAG is vulnerable."], a:0, difficulty:2},
+    {q:"What is the primary advantage of State Space Models (SSMs) like Mamba?", choices:["They are inherently multimodal from the start.","They avoid quadratic complexity, scaling linearly.","They use fewer parameters for easier fine-tuning.","They require much less training data."], a:1, difficulty:3},
+    {q:"What do 'Action Groups' do in an Amazon Bedrock Agent?", choices:["Filter for harmful or inappropriate content.","Manage the agent's conversation history.","Group related APIs and functions the agent can use.","Define the agent's personality and tone."], a:2, difficulty:2},
+    {q:"What is the main reason for using synthetic data in AI training?", choices:["To create large, diverse, and privacy-safe datasets.","To ensure the model only trains on text.","To completely eliminate the need for data labeling.","It downloads faster than real-world data."], a:0, difficulty:2},
+    {q:"What is the goal of post-training quantization for LLMs on edge devices?", choices:["To teach the model a new skill post-training.","To add a layer of encryption to the model.","To reduce model size and speed up inference.","To increase the model's factual accuracy."], a:2, difficulty:2},
+    {q:"The ReAct framework for AI agents combines what two capabilities?", choices:["Reasoning (thought) and taking actions (tools).","Creativity and factual recall.","Language understanding and generation.","User input and output formatting."], a:0, difficulty:2},
+    {q:"What problem do multi-agent frameworks like AutoGen solve?", choices:["Enabling specialized agents to collaborate on complex problems.","Reducing the computational cost of a single agent.","Creating a universal communication protocol for all AIs.","Allowing AI agents to run completely offline."], a:0, difficulty:3},
+    {q:"Why use 'Provisioned Throughput' for a model in Amazon Bedrock?", choices:["To get a lower, variable price per token.","To guarantee consistent performance and throughput.","To get early access to experimental models.","To allow the model to be fine-tuned."], a:1, difficulty:2},
+    {q:"What is the core principle of Constitutional AI?", choices:["The model critiques its own responses based on principles.","The model is trained only with direct human feedback.","The model's training data is heavily filtered.","The model has hard-coded rules against specific topics."], a:0, difficulty:3},
+    {q:"Why is the 'Needle in a Haystack' test important for LLMs?", choices:["It tests the model's creative writing ability.","It assesses recall of a fact in a long document.","It measures the model's raw processing speed.","It evaluates the model's resistance to attacks."], a:1, difficulty:2},
+    {q:"What is a key focus for Amazon Q in enterprise settings?", choices:["Generating marketing and social media copy.","Creating realistic 3D models and environments.","Automating multi-step business workflows.","Composing original musical scores."], a:2, difficulty:2},
+    {q:"What is the main purpose of digital watermarking in AI-generated images?", choices:["To embed copyright information to prevent theft.","To make AI-generated content identifiable as synthetic.","To increase the visual quality of the image.","To reduce the image's file size."], a:1, difficulty:2},
+    {q:"What is the main goal of speculative decoding for LLM inference?", choices:["Predicting the user's next question in advance.","Running multiple models and having them vote.","Using a 'draft' model to accelerate a larger one.","Caching common user queries for instant answers."], a:2, difficulty:3},
+    {q:"What is a key step towards reliable 'tool use' in AI agents?", choices:["The ability to browse the entire internet.","The ability to run on low-power mobile devices.","The ability to correctly understand and use APIs.","The ability to generate human-like conversation."], a:2, difficulty:2},
+    {q:"What distinguishes 'Graph RAG' from traditional vector-based RAG?", choices:["Graph RAG only works with image data.","Graph RAG does not require a vector database.","Graph RAG uses relationships in a knowledge graph.","Graph RAG is much faster but less accurate."], a:2, difficulty:3},
+    {q:"What is the main purpose of 'Guardrails for Amazon Bedrock'?", choices:["To automatically translate the model's output.","To protect the model from denial-of-service attacks.","To define and enforce safety and topic policies.","To route requests to the cheapest available model."], a:2, difficulty:2},
+    {q:"What is the primary advantage of using a Small Language Model (SLM)?", choices:["They do not require any training data.","Lower cost, faster performance, and high accuracy on niche tasks.","They are inherently more secure than large models.","They are more creative than large models."], a:1, difficulty:2},
+    {q:"Combining Bedrock Agents with AWS Step Functions helps with what?", choices:["Automatically fine-tuning the foundation model.","Orchestrating complex, long-running, and stateful tasks.","Visualizing the agent's internal thought process.","Providing a serverless environment for code execution."], a:1, difficulty:3},
+    {q:"What is the main technical challenge for true multimodal AI?", choices:["The slow speed of internet connections.","Finding a common representation space for all modalities.","The high cost of GPUs for processing video.","The lack of sufficient video and audio data."], a:1, difficulty:3},
+    {q:"What is the primary goal of Context Engineering in GenAI?", choices:["To improve the speed of AI model training.","To strategically populate an AI model's context window with relevant information.","To develop new AI model architectures.","To reduce the computational cost of AI models."], a:1, difficulty:2},
+    {q:"Which of the following is a key benefit of effective Context Engineering?", choices:["Optimized AI agent performance.","Increased irrelevant data processing.","Decreased model accuracy.","Reduced need for data pre-processing."], a:0, difficulty:2},
+    {q:"Context Engineering is described as the discipline of designing and managing what?", choices:["User interfaces for AI applications.","Hardware infrastructure for AI.","AI model parameters.","Structures, signals, and affordances that modulate cognition and behavior."], a:3, difficulty:3},
+    {q:"In the context of AI agents, what does Context Engineering aim to prevent?", choices:["Overfitting of models.","Underutilization of computational resources.","Flooding agents with irrelevant data.","Lack of diverse training data."], a:2, difficulty:2},
+    {q:"What is the primary purpose of the Model Context Protocol (MCP)?", choices:["To create new AI programming languages.","To standardize how applications provide context to large language models (LLMs).","To develop advanced AI hardware.","To manage AI model training datasets."], a:1, difficulty:2},
+    {q:"MCP is often compared to what common technology for its role in enabling seamless integration?", choices:["Wi-Fi router.","USB-C port.","Ethernet cable.","Bluetooth connection."], a:1, difficulty:3},
+    {q:"How does MCP facilitate real-time data connection for LLMs?", choices:["By requiring manual data input from users.","By using a proprietary data format.","By storing all data within the LLM itself.","By connecting LLMs directly to enterprise data sources."], a:3, difficulty:2},
+    {q:"What is a key benefit of MCP in terms of AI interactions?", choices:["It simplifies the process of AI model deployment.","It ensures secure and reliable interactions between AI models and data.","It reduces the need for internet connectivity for AI.","It limits the types of data AI can access."], a:1, difficulty:2},
+    {q:"Which of the following best describes MCP in the context of AI agents?", choices:["A standardized way for AI agents to plug into tools, data, and services.","A method for training AI agents.","A framework for evaluating AI agent performance.","A protocol for inter-agent communication."], a:0, difficulty:3},
+    {q:"Research on GenAI usage patterns identifies which two distinct types?", choices:["Developer and End-user.","Analyst and Strategist.","Intellectual partner and information browser.","Creator and Consumer."], a:2, difficulty:2},
+    {q:"What factor significantly impacts GenAI adoption, according to research?", choices:["Model size.","Need for uniqueness.","Hardware specifications.","Programming language used."], a:1, difficulty:2},
+    {q:"What role does trust play in GenAI adoption?", choices:["It is a primary barrier.","It is only relevant for developers.","It has no impact.","It is a mediating factor."], a:3, difficulty:2},
+    {q:"What do consumer mindsets about GenAI emphasize for driving value?", choices:["Complex features.","Minimal user interaction.","Transparency and consistent service.","High performance."], a:2, difficulty:1},
+    {q:"Which prompting technique involves providing no examples to the model?", choices:["Few-shot prompting.","Chain of Thought prompting.","Zero-shot prompting.","Meta prompting."], a:2, difficulty:1},
+    {q:"What does Chain of Thought (CoT) prompting encourage the model to do?", choices:["Focus only on factual information.","Ignore previous turns in conversation.","Generate shorter responses.","Explain its reasoning step-by-step."], a:3, difficulty:1},
+    {q:"What is the purpose of Meta Prompting?", choices:["To generate random outputs.","To limit the model's creativity.","To guide the model in generating other prompts.","To simplify model architecture."], a:2, difficulty:3},
+    {q:"What best practice involves assigning a specific persona to the AI?", choices:["Iterative refinement.","Self-correction.","Role assignment.","Specificity."], a:2, difficulty:1},
+    {q:"What is the goal of iterative refinement in prompt engineering?", choices:["To continuously test and refine prompts.","To increase model training time.","To reduce the number of prompts needed.","To automate prompt generation."], a:0, difficulty:1},
+    {q:"Why is GenAI evaluation essential?", choices:["To simplify deployment.","To measure performance and reliability.","To reduce development costs.","To increase model size."], a:1, difficulty:1},
+    {q:"Which evaluation method involves human evaluators comparing model outputs?", choices:["Automated metrics.","Task-specific evaluation.","Benchmarking.","Pairwise comparison."], a:3, difficulty:2},
+    {q:"What do automated metrics like ROUGE and BLEU assess?", choices:["User interface design.","Hardware utilization.","Fluency, coherence, and relevance.","Model training speed."], a:2, difficulty:3},
+    {q:"What is the purpose of benchmarking in GenAI evaluation?", choices:["To optimize model parameters.","To identify security vulnerabilities.","To compare models against each other.","To generate new datasets."], a:2, difficulty:1},
+    {q:"What does business impact assessment evaluate?", choices:["Real-world impact on business metrics.","Ethical implications of AI.","Technical complexity of the model.","Number of users adopting the AI."], a:0, difficulty:2},
+    {q:"What does GenAI governance aim to establish?", choices:["Faster data processing techniques.","New programming languages.","Automated content generation.","Responsible and ethical deployment frameworks."], a:3, difficulty:2},
+    {q:"What do security evaluations assess in GenAI?", choices:["Training data size.","Model accuracy.","User satisfaction.","Vulnerabilities to prompt injection."], a:3, difficulty:2},
+    {q:"Which of the following is a key aspect of GenAI evaluation?", choices:["Reducing computational resources.","Automating model deployment.","Assessing factual accuracy.","Increasing model complexity."], a:2, difficulty:1},
+    {q:"What is a common challenge in GenAI evaluation?", choices:["Insufficient training data.","Lack of computing power.","Subjectivity in human judgment.","Slow model inference."], a:2, difficulty:2},
+    {q:"What is the ultimate goal of GenAI evaluation?", choices:["To eliminate human intervention.","To achieve perfect model performance.","To create self-improving AI.","To ensure trustworthy and effective AI systems."], a:3, difficulty:1},
+    {q:"What does 'LLM' commonly stand for in AI?", choices:["Large Language Model","Linear Learning Matrix","Local Latent Model","Low-Level ML"], a:0, difficulty:1},
+    {q:"What is 'prompt engineering' primarily concerned with?", choices:["Building GPUs","Designing training hardware","Improving RLHF algorithms","Tuning prompts to get better outputs"], a:3, difficulty:1},
+    {q:"Which core architecture is used by many modern language models like GPT?", choices:["Convolutional Networks","Recurrent Neural Networks","Transformers","Decision Trees"], a:2, difficulty:1},
+    {q:"What is a 'hallucination' in LLM output?", choices:["An incorrect but plausible-sounding answer","A model training phase","A visualization tool","A dataset type"], a:0, difficulty:1},
+    {q:"'RLHF' stands for which training technique?", choices:["Reinforcement Learning from Human Feedback","Randomized Linear Heuristic Fit","Recurrent Latent Human Function","Rapid Learning Hybrid Framework"], a:0, difficulty:1},
+    {q:"What does 'tokens' refer to in LLMs?", choices:["GPU memory blocks","Neural network weights","Units of text the model processes","Encryption keys"], a:2, difficulty:1},
+    {q:"What is 'fine-tuning' in LLMs?", choices:["Adjusting hyperparameters only","Training a model further on specific data","Converting model to binary","Compressing weights"], a:1, difficulty:1},
+    {q:"What is a 'checkpoint' in model development?", choices:["A saved model state","A dataset split method","A cloud provider","A type of GPU"], a:0, difficulty:1},
+    {q:"'AGI' stands for which term?", choices:["Autonomous Grid Interface","Augmented Generative Innovation","Applied Gradient Integration","Artificial General Intelligence"], a:3, difficulty:1},
+    {q:"Which paper introduced the Transformer architecture?", choices:["Playing Atari with Deep Reinforcement Learning","Generative Adversarial Networks","ImageNet: A large-scale hierarchical image database","Attention Is All You Need"], a:3, difficulty:2},
+    {q:"What core mechanism enables Transformers to weigh importance between tokens?", choices:["Self-attention","Convolution","Backpropagation","Dropout"], a:0, difficulty:2},
+    {q:"What is RLHF primarily used to achieve in LLMs?", choices:["Compress model weights","Align model outputs with human preferences","Scale model size","Speed up inference times"], a:1, difficulty:2},
+    {q:"What is 'inference' in the context of LLMs?", choices:["The model producing outputs for inputs","Data collection practice","Training with labeled data","Model sharding technique"], a:0, difficulty:2},
+    {q:"What is the primary benefit of model parallelism?", choices:["Improves model's reasoning","Allows training very large models across devices","Prevents hallucinations","Improves interpretability"], a:1, difficulty:2},
+    {q:"What is 'temperature' in language model sampling?", choices:["GPU thermal limit","A training hyperparameter for learning rate","A sampling parameter that affects randomness","Size of the model's context window"], a:2, difficulty:2},
+    {q:"What does 'few-shot' prompting mean?", choices:["Giving the model a few small hints after the answer","Providing a few examples in the prompt","Training on a few GPUs","Limiting outputs to a few tokens"], a:1, difficulty:2},
+    {q:"What is a 'decoder-only' Transformer like GPT primarily designed for?", choices:["Text generation","Image segmentation","Speech recognition","Feature extraction"], a:0, difficulty:2},
+    {q:"Which technique helps reduce hallucinations by grounding models in tools or retrieval?", choices:["Gradient clipping","Retrieval-Augmented Generation (RAG)","Weight decay","Dropout"], a:1, difficulty:2},
+    {q:"What does 'tokenization' do?", choices:["Converts GPU tensors to CPU","Removes stopwords automatically","Encrypts data before training","Transforms text into discrete tokens"], a:3, difficulty:2},
+    {q:"What is 'parameter count' generally used to describe for LLMs?", choices:["Number of GPUs used","Inference latency","Size of model weights","Number of training steps"], a:2, difficulty:2},
+    {q:"What is 'alignment' in AI safety terms?", choices:["Aligning datasets' formats","Ensuring models behave according to human values/preferences","Tuning hardware to model scale","Converting models to edge devices"], a:1, difficulty:2},
+    {q:"Which core idea helps attention scale on long sequences?", choices:["Full attention scales better","Convolution","Sparse attention can improve efficiency","Neither"], a:2, difficulty:3},
+    {q:"What is 'distillation' in model compression?", choices:["Training a smaller model to mimic a larger one","A data collection process","A special GPU cooling method","A visualization technique"], a:0, difficulty:2},
+    {q:"What does 'context window' refer to for an LLM?", choices:["Number of GPUs available","Learning rate schedule","Amount of text (tokens) model can attend to","Batch size"], a:2, difficulty:2},
+    {q:"What drawback can larger LLMs have if unmitigated?", choices:["Slower training convergence","More likelihood to hallucinate if unaligned","They no longer generalize","They cease being probabilistic"], a:1, difficulty:2},
+    {q:"What does 'safety fine-tuning' typically involve?", choices:["Adding adversarial GPUs","Training on curated data + human feedback","Removing attention layers","Converting models to CPU"], a:1, difficulty:2},
+    {q:"Which is an example of a multimodal AI system?", choices:["A model handling text+images (e.g., GPT-4 multimodal)","RNN","SVM","Linear regression"], a:0, difficulty:2},
+    {q:"What is 'zero-shot' capability?", choices:["Solve tasks without examples","Train without data","Zero inference cost","Run with zero latency"], a:0, difficulty:2},
+    {q:"What is 'instruction tuning' focused on?", choices:["Optimizing GPU ISA","Fine-tuning models with instruction examples","Hardware calibration","Data sanitation"], a:1, difficulty:2},
+    {q:"What does 'hallucination rate' measure?", choices:["Refusal percentage","Frequency of incorrect plausible outputs","Training loss","Parameter sparsity"], a:1, difficulty:2},
+    {q:"Which field studies interpretability?", choices:["Explainable AI (XAI)","GANs","RL","Cloud orchestration"], a:0, difficulty:2},
+    {q:"What is 'prompt injection'?", choices:["Optimizing prompts for speed","A vulnerability that manipulates model behavior","Data augmentation","Activation function"], a:1, difficulty:2},
+    {q:"Which architecture is used for encoder-decoder tasks?", choices:["Encoder-only","Decoder-only","Encoder-decoder (T5)","Convolution-only"], a:2, difficulty:2},
+    {q:"What is 'alignment tax'?", choices:["Literal tax","Trade-offs between capability & alignment","Taxes on data centers","GPU tariffs"], a:1, difficulty:3},
+    {q:"How to keep LLMs up-to-date without retraining?", choices:["Change vocabulary","Use retrieval / tools","Increase params","Lower temperature"], a:1, difficulty:3},
+    {q:"'Mixture of Experts' aims to:", choices:["Route inputs to subsets of parameters to scale efficiently","Blend human experts","Cause hallucinations","Compress datasets"], a:0, difficulty:3},
+    {q:"Which concept produces intermediate reasoning steps?", choices:["Chain-of-thought prompting","Temperature annealing","Dropout scheduling","Weight decay"], a:0, difficulty:3},
+    {q:"Agentic AI risk include:", choices:["Unintended autonomous actions","Lower inference cost","Better tokenization","Faster fine-tuning"], a:0, difficulty:3},
+    {q:"What is 'safety alignment' testing about?", choices:["Energy efficiency","Ensuring constraints & avoid harm","GPU utilization","Licensing"], a:1, difficulty:3},
+    {q:"Why quantize an LLM?", choices:["Increase precision","Reduce model size for inference","Increase hallucinations","Add tokens"], a:1, difficulty:3},
+    {q:"What is 'catastrophic forgetting'?", choices:["Losing earlier knowledge when learning new tasks","GPU failure","Dataset metric","Overfitting sign"], a:0, difficulty:3},
+    {q:"Which safety approach uses model self-critique?", choices:["Self-critique / auditing","Dropout","Backprop","Tokenization"], a:0, difficulty:3},
+    {q:"What does context length trade off against?", choices:["GPU vendor","Memory & compute cost","Accuracy always up","Number of layers"], a:1, difficulty:3},
+    {q:"How reduce bias in model outputs?", choices:["Data curation & human feedback","Increase temperature","Use smaller models only","Remove tokenizer"], a:0, difficulty:3},
+    {q:"What is 'red teaming' in AI?", choices:["Adversarial evaluation to find failure modes","Server hacking","GPU cluster","Compression technique"], a:0, difficulty:3},
+    {q:"Tool use example by language models?", choices:["Calling a search API to fetch facts","Change own weights","Alter hardware","Decrease context"], a:0, difficulty:3},
+    {q:"Which area makes LLM outputs explainable?", choices:["Explainable AI (XAI)","GANs","Reinforcement Learning","Cloud orchestration"], a:0, difficulty:3},
+    {q:"Which bottleneck limits huge LLM training throughput?", choices:["Network & interconnect bandwidth","Model architecture","Tokenization speed","Font rendering"], a:0, difficulty:3},
+    {q:"What is 'sparse attention' useful for?", choices:["Reduce compute for long contexts","Increase hallucinations","Slow inference","Simulate GPUs"], a:0, difficulty:3},
+    {q:"What is 'overfitting'?", choices:["Good on training, poor on unseen","Too many GPUs","Hardware failure","Data augmentation"], a:0, difficulty:2},
+    {q:"How to update LLM factuality without retraining?", choices:["Retrieval/tools/adapters","More params","Raise temperature","Smaller batch"], a:0, difficulty:3},
+    {q:"Which improves LLM factuality?", choices:["RAG, grounding & human feedback","Only more tokens","Only more GPUs","Only higher temperature"], a:0, difficulty:3}
 ];
 
 // --- FIX: Correctly combine all question banks into one master list ---
@@ -427,7 +429,7 @@ const ALEXA_RESPONSES = [
   "Let me put on my thinking cap... which is a distributed network of servers. They all say it's <strong>%s</strong>.",
   "I could tell you, but then I'd have to... well, nothing really. The answer is <strong>%s</strong>."
 ];
-btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Alexa will give you a suggestion. She is programmed to be right 80% of the time and is a bit... unpredictable.', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
+btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Remember: Alexa will give you the right answer 80% of the time but will give you attitude 100% of the time!', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
 
 btnFlip.addEventListener('click', ()=>{ if (state.usedLifelines['flip']) return; confirmLifeline('Flip the Question','Use Flip the Question?','This will replace the current question with a new one of the same difficulty.', ()=>{ state.usedLifelines['flip'] = true; btnFlip.classList.add('used'); playSound(sndLifeline); const currentQ = state.roundQuestions[state.currentIndex]; const sameDifficultyPool = ALL_QUESTIONS.filter(q => q.difficulty === currentQ.difficulty && !state.roundQuestions.some(rq => rq.q === q.q)); if (sameDifficultyPool.length > 0) { const newQ = sameDifficultyPool[Math.floor(Math.random() * sameDifficultyPool.length)]; state.roundQuestions[state.currentIndex] = newQ; setTimeout(renderQuestion, 500); } else { showModal(`<h3>No More Questions!</h3><p>Sorry, there are no more questions of that difficulty left to flip to. Your lifeline was not used.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start">Close</button></div>`); state.usedLifelines['flip'] = false; btnFlip.classList.remove('used'); } }); });
 
@@ -468,7 +470,7 @@ function endGame(reason, amountLabel){
   endPrize.textContent = amountLabel || "$0";
   state.finalPrizeLabel = amountLabel || "$0";
   playerNameInput.focus();
-  endScreenNav.style.visibility = 'visible'; // FIX: Ensure nav is visible
+  endScreenNav.style.visibility = 'visible';
 }
 
 function endPracticeMode() {
@@ -661,67 +663,4 @@ practiceBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); 
 const howToPlayBtn = document.getElementById('howToPlayBtn');
 howToPlayBtn.addEventListener('click', (event)=> {
   event.stopPropagation();
-  showModal(`<h3>How to Play</h3><p><strong>Play Mode:</strong> Answer 13 questions to win $1,000,000. Get one wrong, and it's game over! Use 3 lifelines to help you. Guaranteed prizes at Q5 ($1,000) and Q10 ($32,000).</p><p><strong>Practice Mode:</strong> A casual way to test your knowledge. There's no timer and no penalty for wrong answers. The game ends after the last question.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Got it!</button></div>`);
-});
-howToPlayBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'View game rules & lifelines'; });
-
-
-function startGame(isPractice = false){
-  if (!hasPlayedIntro) {
-    playSound(sndIntro).then(() => { hasPlayedIntro = true; }).catch(() => { hasPlayedIntro = false; });
-  }
-  
-  state.isPracticeMode = isPractice;
-  timerEl.style.display = isPractice ? 'none' : 'block';
-  prizeListEl.style.opacity = isPractice ? '0.5' : '1';
-  document.querySelector('.ladder h3').textContent = isPractice ? 'Practice Mode' : 'Prize Ladder';
-
-  startScreen.style.display = 'none';
-  endScreen.style.display = 'none';
-  gameArea.style.display = 'flex';
-  
-  gameArea.classList.remove('fade-in');
-  void gameArea.offsetWidth;
-  gameArea.classList.add('fade-in');
-
-  nameEntrySection.style.display = 'flex';
-  postSaveControls.style.display = 'none';
-  endScreenNav.style.visibility = 'hidden';
-  retroCert.style.display = 'none';
-  leaderboardSection.style.display = 'none';
-  playerNameInput.value = '';
-  playerNameInput.placeholder = 'Enter name for certificate';
-  state.usedLifelines = {'5050':false,'alexa':false,'flip':false};
-  [btn5050, btnAlexa, btnFlip].forEach(b => b.classList.remove('used'));
-  buildRound();
-  state.currentIndex = 0;
-  state.achievedTier = 0;
-  state.finalPrizeLabel = "$0";
-  state.playing = true;
-  renderQuestion();
-  if (!isPractice) {
-    startTimer();
-  }
-}
-
-volumeSlider.addEventListener('input', (event) => {
-    state.volume = event.target.value;
-    allSounds.forEach(sound => sound.volume = state.volume);
-    // Update the visual fill of the slider track
-    document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
-});
-
-(function init(){
-  populatePrizeLadder();
-  volumeSlider.value = state.volume;
-  document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
-  allSounds.forEach(sound => sound.volume = state.volume);
-  gameArea.style.display = 'none';
-  endScreen.style.display = 'none';
-  // Try to play intro sound, browser might block it until user interaction
-  playSound(sndIntro).then(() => {
-    hasPlayedIntro = true;
-  }).catch(() => {
-    hasPlayedIntro = false;
-  });
-})();
+  showModal(`<h3>How to Play</h3><p><strong>Play Mode:</strong> Answer 13 questions to win $1,000,000. Get one wrong, and it's game over! Use 3 lifelines to help you. Guaranteed prizes at Q5 ($1,000) and Q10 ($32,000).</p><p><strong>Practice Mode:</stro
