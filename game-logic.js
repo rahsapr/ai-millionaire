@@ -1,5 +1,40 @@
-// --- FIX: Wrap the entire script in this event listener ---
+/* -------------------- SCRIPT START -------------------- */
+// --- FIX: Wrap the entire script in this event listener to ensure HTML is fully loaded ---
 document.addEventListener('DOMContentLoaded', () => {
+
+    // --- NEW: Robust Element Check ---
+    const requiredElementIds = [
+        'startScreen', 'startScreenImg', 'gameArea', 'qIndex', 'questionText',
+        'answers', 'timer', 'btn5050', 'btnAlexa', 'btnFlip', 'volumeSlider',
+        'walkAwayBtn', 'prizeList', 'currentPrize', 'modalRoot', 'finalOverlay',
+        'finalChoice', 'finalConfirm', 'finalCancel', 'confetti', 'winContainer',
+        'practiceEndContainer', 'endScreen', 'endTitle', 'endPrize', 'nameEntrySection',
+        'playerName', 'saveScoreBtn', 'retroCertificate', 'certTitle', 'certName',
+        'certAmount', 'certDate', 'postSaveControls', 'certBtn', 'playAgainBtn',
+        'endScreenNav', 'skipToEndBtn', 'playAgainEndBtn', 'leaderboardSection',
+        'leaderboard', 'playGameBtn', 'practiceBtn', 'howToPlayBtn', 'startScreenTooltip'
+    ];
+    
+    let missingElements = [];
+    requiredElementIds.forEach(id => {
+        if (!document.getElementById(id)) {
+            missingElements.push(id);
+        }
+    });
+
+    if (missingElements.length > 0) {
+        console.error("CRITICAL ERROR: The following required HTML elements were not found:", missingElements);
+        const mainPanel = document.getElementById('mainPanel');
+        if (mainPanel) {
+            mainPanel.innerHTML = `<div style="color: var(--danger); padding: 40px; text-align: center;">
+                <h2>Initialization Error</h2>
+                <p>Could not find required element(s): #${missingElements.join(', #')}.</p>
+                <p>The game cannot start. Please check the HTML file structure.</p>
+            </div>`;
+        }
+        return; // Stop all further execution
+    }
+
 
     /* -------------------- GAME DATA -------------------- */
     const PRIZES = [
@@ -135,14 +170,11 @@ document.addEventListener('DOMContentLoaded', () => {
     {q:"Which improves LLM factuality?", choices:["RAG, grounding & human feedback","Only more tokens","Only more GPUs","Only higher temperature"], a:0, difficulty:3}
     ];
 
-    // --- FIX: Correctly combine all question banks into one master list ---
     const ALL_QUESTIONS = GENERAL_QUESTIONS.concat(AMAZON_QUESTIONS);
 
-    // --- SHUFFLE ANSWER CHOICES FOR FAIR DISTRIBUTION ---
     ALL_QUESTIONS.forEach(q => {
-        if (!q.choices || typeof q.a === 'undefined') return; // Defensive check
+        if (!q.choices || typeof q.a === 'undefined') return;
         const correctAnswerText = q.choices[q.a];
-        // Fisher-Yates shuffle algorithm
         for (let i = q.choices.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [q.choices[i], q.choices[j]] = [q.choices[j], q.choices[i]];
@@ -150,8 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
         q.a = q.choices.indexOf(correctAnswerText);
     });
 
-
-    /* -------------------- STATE & DOM -------------------- */
     let state = {
       roundQuestions: [], currentIndex:0,
       usedLifelines: {'5050':false,'alexa':false,'flip':false},
@@ -174,7 +204,6 @@ document.addEventListener('DOMContentLoaded', () => {
           confettiContainer = document.getElementById('confetti'), winContainer = document.getElementById('winContainer'),
           practiceEndContainer = document.getElementById('practiceEndContainer');
 
-    // --- End Screen Elements ---
     const endScreen = document.getElementById('endScreen'), endTitle = document.getElementById('endTitle'),
           endPrize = document.getElementById('endPrize'),
           nameEntrySection = document.getElementById('nameEntrySection'),
@@ -188,14 +217,12 @@ document.addEventListener('DOMContentLoaded', () => {
           leaderboardSection = document.getElementById('leaderboardSection'),
           leaderboardDiv = document.getElementById('leaderboard');
 
-    // --- Certificate Elements ---
     const retroCert = document.getElementById('retroCertificate'),
           certTitleEl = document.getElementById('certTitle'),
           certNameEl = document.getElementById('certName'),
           certAmountEl = document.getElementById('certAmount'),
           certDateEl = document.getElementById('certDate');
 
-    // --- Audio Elements ---
     const sndIntro = document.getElementById('sndIntro'),
           sndCorrectRS = document.getElementById('sndCorrectRS'),
           sndCongratsVoice = document.getElementById('sndCongratsVoice'),
