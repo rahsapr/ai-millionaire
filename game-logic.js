@@ -725,4 +725,4 @@ const GENERAL_QUESTIONS = [
       }).catch(() => {
         hasPlayedIntro = false;
       });
-    })
+    })();
