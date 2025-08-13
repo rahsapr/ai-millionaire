@@ -1,37 +1,37 @@
-// --- FIX: The entire script is now wrapped in a self-executing function ---
-// This runs automatically the moment the file is loaded by init.js
-(function initializeGame() {
+/* -------------------- SCRIPT START -------------------- */
+// This script is loaded at the end of the body, so all elements exist.
+// We will use a manager pattern to initialize parts of the game only when needed.
 
-    /* -------------------- GAME DATA -------------------- */
-    const PRIZES = [
-      {tier:13,label:"$1,000,000"}, {tier:12,label:"$125,000"}, {tier:11,label:"$64,000"},
-      {tier:10,label:"$32,000",guaranteed:true}, {tier:9,label:"$16,000"}, {tier:8,label:"$8,000"},
-      {tier:7,label:"$4,000"}, {tier:6,label:"$2,000"}, {tier:5,label:"$1,000",guaranteed:true},
-      {tier:4,label:"$500"}, {tier:3,label:"$300"}, {tier:2,label:"$200"}, {tier:1,label:"$100"}
-    ];
+/* -------------------- GAME DATA & STATE -------------------- */
+const PRIZES = [
+  {tier:13,label:"$1,000,000"}, {tier:12,label:"$125,000"}, {tier:11,label:"$64,000"},
+  {tier:10,label:"$32,000",guaranteed:true}, {tier:9,label:"$16,000"}, {tier:8,label:"$8,000"},
+  {tier:7,label:"$4,000"}, {tier:6,label:"$2,000"}, {tier:5,label:"$1,000",guaranteed:true},
+  {tier:4,label:"$500"}, {tier:3,label:"$300"}, {tier:2,label:"$200"}, {tier:1,label:"$100"}
+];
 
-    const AMAZON_QUESTIONS = [
-        {q:"Amazon's own family of foundation models, available in Bedrock, is named what?", choices:["Olympus","Aurora","Titan","Meridian"], a:2, difficulty:1},
-        {q:"Which AWS service is an AI-powered coding companion, similar to GitHub Copilot?", choices:["CodeCatalyst","Cloud9","CodeWhisperer","CodeDeploy"], a:2, difficulty:1},
-        {q:"What is Amazon's conversational AI assistant for businesses, designed to be an 'expert on your business'?", choices:["Alexa for Business","Amazon Expert","Amazon Q","AWS Concierge"], a:2, difficulty:1},
-        {q:"What is Amazon Bedrock's primary function?", choices:["A data streaming service","A serverless database","A service to build with foundation models","A cloud-based IDE"], a:2, difficulty:1},
-        {q:"AWS's custom-designed chip optimized for cost-effective AI model *inference* is called:", choices:["Trainium","Graviton","Inferentia","QuantumLeap"], a:2, difficulty:2},
-        {q:"AWS's custom-designed chip for high-performance AI model *training* is called:", choices:["Trainium","Graviton","Anapurna","Inferentia"], a:0, difficulty:2},
-        {q:"In 2023-2024, Amazon made a multi-billion dollar investment in which major AI startup, making their models available on Bedrock?", choices:["OpenAI","Cohere","Mistral AI","Anthropic"], a:3, difficulty:2},
-        {q:"Within Amazon Bedrock, what feature allows you to orchestrate tasks by giving the model access to tools and APIs?", choices:["Knowledge Bases","Provisioned Throughput","Agents","Guardrails"], a:2, difficulty:3},
-        {q:"What AWS service is a fully managed platform to build, train, and deploy machine learning models at scale?", choices:["Amazon Rekognition","AWS Lambda","Amazon SageMaker","Amazon Polly"], a:2, difficulty:1},
-        {q:"What is the primary purpose of 'Knowledge Bases for Amazon Bedrock'?", choices:["To store user conversations","To fine-tune a model's weights","To implement Retrieval-Augmented Generation (RAG)","To cache model responses"], a:2, difficulty:2},
-        {q:"Amazon's Titan Image Generator model includes what built-in responsible AI feature by default?", choices:["Invisible watermarks","Bias detection","Content filtering","Redaction of faces"], a:0, difficulty:3},
-        {q:"Amazon often describes its generative AI strategy in 'three layers'. What do these layers represent?", choices:["Small, Medium, Large models","Text, Image, Audio models","Infrastructure, Tools/FMs, Applications","Internal, Partner, Open-Source models"], a:2, difficulty:3},
-        {q:"The Claude 3 family of models (Haiku, Sonnet, Opus) from Anthropic are prominently featured on which AWS service?", choices:["AWS AI Platform","Amazon Bedrock","Amazon SageMaker","EC2 P5 Instances"], a:1, difficulty:2},
-        {q:"Which AWS service uses AI to automatically extract text and data from scanned documents?", choices:["Amazon S3 Select","Amazon Textract","AWS Comprehend","AWS Glue"], a:1, difficulty:1},
-        {q:"If you wanted to turn text into lifelike speech using an AI service on AWS, which would you use?", choices:["Amazon Speechify","Amazon Lex","Amazon Polly","Amazon Transcribe"], a:2, difficulty:1},
-        {q:"What feature in SageMaker provides access to a broad selection of pre-trained models, including many open-source foundation models?", choices:["SageMaker JumpStart","SageMaker Pipelines","SageMaker Studio","SageMaker Canvas"], a:0, difficulty:2},
-        {q:"When using Amazon Q, what allows it to connect to your company's specific data sources like S3, Slack, or Salesforce?", choices:["IAM Roles","VPC Endpoints","Connectors","DataSync"], a:2, difficulty:2},
-        {q:"AWS's AI-powered service for identifying objects, people, text, and activities in images and videos is called:", choices:["Amazon Lookout","Amazon Rekognition","AWS Panorama","Amazon Inspector"], a:1, difficulty:1}
-    ];
+const AMAZON_QUESTIONS = [
+    {q:"Amazon's own family of foundation models, available in Bedrock, is named what?", choices:["Olympus","Aurora","Titan","Meridian"], a:2, difficulty:1},
+    {q:"Which AWS service is an AI-powered coding companion, similar to GitHub Copilot?", choices:["CodeCatalyst","Cloud9","CodeWhisperer","CodeDeploy"], a:2, difficulty:1},
+    {q:"What is Amazon's conversational AI assistant for businesses, designed to be an 'expert on your business'?", choices:["Alexa for Business","Amazon Expert","Amazon Q","AWS Concierge"], a:2, difficulty:1},
+    {q:"What is Amazon Bedrock's primary function?", choices:["A data streaming service","A serverless database","A service to build with foundation models","A cloud-based IDE"], a:2, difficulty:1},
+    {q:"AWS's custom-designed chip optimized for cost-effective AI model *inference* is called:", choices:["Trainium","Graviton","Inferentia","QuantumLeap"], a:2, difficulty:2},
+    {q:"AWS's custom-designed chip for high-performance AI model *training* is called:", choices:["Trainium","Graviton","Anapurna","Inferentia"], a:0, difficulty:2},
+    {q:"In 2023-2024, Amazon made a multi-billion dollar investment in which major AI startup, making their models available on Bedrock?", choices:["OpenAI","Cohere","Mistral AI","Anthropic"], a:3, difficulty:2},
+    {q:"Within Amazon Bedrock, what feature allows you to orchestrate tasks by giving the model access to tools and APIs?", choices:["Knowledge Bases","Provisioned Throughput","Agents","Guardrails"], a:2, difficulty:3},
+    {q:"What AWS service is a fully managed platform to build, train, and deploy machine learning models at scale?", choices:["Amazon Rekognition","AWS Lambda","Amazon SageMaker","Amazon Polly"], a:2, difficulty:1},
+    {q:"What is the primary purpose of 'Knowledge Bases for Amazon Bedrock'?", choices:["To store user conversations","To fine-tune a model's weights","To implement Retrieval-Augmented Generation (RAG)","To cache model responses"], a:2, difficulty:2},
+    {q:"Amazon's Titan Image Generator model includes what built-in responsible AI feature by default?", choices:["Invisible watermarks","Bias detection","Content filtering","Redaction of faces"], a:0, difficulty:3},
+    {q:"Amazon often describes its generative AI strategy in 'three layers'. What do these layers represent?", choices:["Small, Medium, Large models","Text, Image, Audio models","Infrastructure, Tools/FMs, Applications","Internal, Partner, Open-Source models"], a:2, difficulty:3},
+    {q:"The Claude 3 family of models (Haiku, Sonnet, Opus) from Anthropic are prominently featured on which AWS service?", choices:["AWS AI Platform","Amazon Bedrock","Amazon SageMaker","EC2 P5 Instances"], a:1, difficulty:2},
+    {q:"Which AWS service uses AI to automatically extract text and data from scanned documents?", choices:["Amazon S3 Select","Amazon Textract","AWS Comprehend","AWS Glue"], a:1, difficulty:1},
+    {q:"If you wanted to turn text into lifelike speech using an AI service on AWS, which would you use?", choices:["Amazon Speechify","Amazon Lex","Amazon Polly","Amazon Transcribe"], a:2, difficulty:1},
+    {q:"What feature in SageMaker provides access to a broad selection of pre-trained models, including many open-source foundation models?", choices:["SageMaker JumpStart","SageMaker Pipelines","SageMaker Studio","SageMaker Canvas"], a:0, difficulty:2},
+    {q:"When using Amazon Q, what allows it to connect to your company's specific data sources like S3, Slack, or Salesforce?", choices:["IAM Roles","VPC Endpoints","Connectors","DataSync"], a:2, difficulty:2},
+    {q:"AWS's AI-powered service for identifying objects, people, text, and activities in images and videos is called:", choices:["Amazon Lookout","Amazon Rekognition","AWS Panorama","Amazon Inspector"], a:1, difficulty:1}
+];
 
-    const GENERAL_QUESTIONS = [
+const GENERAL_QUESTIONS = [
     // --- NEW, HIGH-QUALITY QUESTIONS ---
     {q:"What is the key difference between AWS Trainium and Inferentia chips?", choices:["Trainium is high-cost; Inferentia is low-cost.","Trainium is for text; Inferentia is for images.","Trainium is for model training; Inferentia is for inference.","Trainium uses ARM; Inferentia uses x86 architecture."], a:2, difficulty:2},
     {q:"In a Mixture-of-Experts (MoE) model, what does the 'gating network' do?", choices:["Loads all model parameters into memory.","Routes each input token to the best expert.","Applies the final activation function to the output.","Aggregates the final outputs from all experts."], a:1, difficulty:3},
@@ -149,8 +149,7 @@
     });
 
 
-    // ... [The rest of the entire game-logic.js file goes here, exactly as it was in the previous response] ...
-    // The following is the remainder of the script.
+    // --- [The rest of the JS code is identical to the previous response, starting from the `let state = ...` object] ---
 
     let state = {
       roundQuestions: [], currentIndex:0,
