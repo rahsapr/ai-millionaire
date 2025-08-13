@@ -1,40 +1,6 @@
-/* -------------------- SCRIPT START -------------------- */
-// --- FIX: Wrap the entire script in this event listener to ensure HTML is fully loaded ---
+// --- FIX #1: All JavaScript is now inside this DOMContentLoaded listener. ---
+// This guarantees that the HTML page is fully built before any code runs.
 document.addEventListener('DOMContentLoaded', () => {
-
-    // --- NEW: Robust Element Check ---
-    const requiredElementIds = [
-        'startScreen', 'startScreenImg', 'gameArea', 'qIndex', 'questionText',
-        'answers', 'timer', 'btn5050', 'btnAlexa', 'btnFlip', 'volumeSlider',
-        'walkAwayBtn', 'prizeList', 'currentPrize', 'modalRoot', 'finalOverlay',
-        'finalChoice', 'finalConfirm', 'finalCancel', 'confetti', 'winContainer',
-        'practiceEndContainer', 'endScreen', 'endTitle', 'endPrize', 'nameEntrySection',
-        'playerName', 'saveScoreBtn', 'retroCertificate', 'certTitle', 'certName',
-        'certAmount', 'certDate', 'postSaveControls', 'certBtn', 'playAgainBtn',
-        'endScreenNav', 'skipToEndBtn', 'playAgainEndBtn', 'leaderboardSection',
-        'leaderboard', 'playGameBtn', 'practiceBtn', 'howToPlayBtn', 'startScreenTooltip'
-    ];
-    
-    let missingElements = [];
-    requiredElementIds.forEach(id => {
-        if (!document.getElementById(id)) {
-            missingElements.push(id);
-        }
-    });
-
-    if (missingElements.length > 0) {
-        console.error("CRITICAL ERROR: The following required HTML elements were not found:", missingElements);
-        const mainPanel = document.getElementById('mainPanel');
-        if (mainPanel) {
-            mainPanel.innerHTML = `<div style="color: var(--danger); padding: 40px; text-align: center;">
-                <h2>Initialization Error</h2>
-                <p>Could not find required element(s): #${missingElements.join(', #')}.</p>
-                <p>The game cannot start. Please check the HTML file structure.</p>
-            </div>`;
-        }
-        return; // Stop all further execution
-    }
-
 
     /* -------------------- GAME DATA -------------------- */
     const PRIZES = [
@@ -743,7 +709,6 @@ document.addEventListener('DOMContentLoaded', () => {
     volumeSlider.addEventListener('input', (event) => {
         state.volume = event.target.value;
         allSounds.forEach(sound => sound.volume = state.volume);
-        // Update the visual fill of the slider track
         document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
     });
 
