@@ -1,8 +1,3 @@
-console.log("----- DIAGNOSTIC TEST -----");
-console.log("Document readyState:", document.readyState);
-console.log("gameArea element:", document.getElementById('gameArea'));
-console.log("--------------------------");
-
 // --- FIX: Wrap the entire script in this event listener ---
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -138,606 +133,606 @@ document.addEventListener('DOMContentLoaded', () => {
     {q:"What is 'overfitting'?", choices:["Good on training, poor on unseen","Too many GPUs","Hardware failure","Data augmentation"], a:0, difficulty:2},
     {q:"How to update LLM factuality without retraining?", choices:["Retrieval/tools/adapters","More params","Raise temperature","Smaller batch"], a:0, difficulty:3},
     {q:"Which improves LLM factuality?", choices:["RAG, grounding & human feedback","Only more tokens","Only more GPUs","Only higher temperature"], a:0, difficulty:3}
-];
+    ];
 
-// --- FIX: Correctly combine all question banks into one master list ---
-const ALL_QUESTIONS = GENERAL_QUESTIONS.concat(AMAZON_QUESTIONS);
+    // --- FIX: Correctly combine all question banks into one master list ---
+    const ALL_QUESTIONS = GENERAL_QUESTIONS.concat(AMAZON_QUESTIONS);
 
-// --- SHUFFLE ANSWER CHOICES FOR FAIR DISTRIBUTION ---
-ALL_QUESTIONS.forEach(q => {
-    if (!q.choices || typeof q.a === 'undefined') return; // Defensive check
-    const correctAnswerText = q.choices[q.a];
-    // Fisher-Yates shuffle algorithm
-    for (let i = q.choices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [q.choices[i], q.choices[j]] = [q.choices[j], q.choices[i]];
+    // --- SHUFFLE ANSWER CHOICES FOR FAIR DISTRIBUTION ---
+    ALL_QUESTIONS.forEach(q => {
+        if (!q.choices || typeof q.a === 'undefined') return; // Defensive check
+        const correctAnswerText = q.choices[q.a];
+        // Fisher-Yates shuffle algorithm
+        for (let i = q.choices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [q.choices[i], q.choices[j]] = [q.choices[j], q.choices[i]];
+        }
+        q.a = q.choices.indexOf(correctAnswerText);
+    });
+
+
+    /* -------------------- STATE & DOM -------------------- */
+    let state = {
+      roundQuestions: [], currentIndex:0,
+      usedLifelines: {'5050':false,'alexa':false,'flip':false},
+      timerRef:null, timeLeft:30, volume: 0.5, playing:false, isPracticeMode: false,
+      achievedTier:0, finalPrizeLabel:"$0"
+    };
+
+    // --- DOM Elements ---
+    const startScreen = document.getElementById('startScreen'),
+          startScreenImg = document.getElementById('startScreenImg'),
+          gameArea = document.getElementById('gameArea'),
+          qIndexEl = document.getElementById('qIndex'), questionText = document.getElementById('questionText'),
+          answersEl = document.getElementById('answers'), timerEl = document.getElementById('timer'),
+          btn5050 = document.getElementById('btn5050'), btnAlexa = document.getElementById('btnAlexa'), btnFlip = document.getElementById('btnFlip'),
+          volumeSlider = document.getElementById('volumeSlider'),
+          walkAwayBtn = document.getElementById('walkAwayBtn'),
+          prizeListEl = document.getElementById('prizeList'), currentPrizeEl = document.getElementById('currentPrize'),
+          modalRoot = document.getElementById('modalRoot'), finalOverlay = document.getElementById('finalOverlay'),
+          finalChoiceText = document.getElementById('finalChoice'), finalConfirm = document.getElementById('finalConfirm'), finalCancel = document.getElementById('finalCancel'),
+          confettiContainer = document.getElementById('confetti'), winContainer = document.getElementById('winContainer'),
+          practiceEndContainer = document.getElementById('practiceEndContainer');
+
+    // --- End Screen Elements ---
+    const endScreen = document.getElementById('endScreen'), endTitle = document.getElementById('endTitle'),
+          endPrize = document.getElementById('endPrize'),
+          nameEntrySection = document.getElementById('nameEntrySection'),
+          playerNameInput = document.getElementById('playerName'),
+          saveScoreBtn = document.getElementById('saveScoreBtn'),
+          postSaveControls = document.getElementById('postSaveControls'),
+          certBtn = document.getElementById('certBtn'), playAgainBtn = document.getElementById('playAgainBtn'),
+          endScreenNav = document.getElementById('endScreenNav'),
+          skipToEndBtn = document.getElementById('skipToEndBtn'),
+          playAgainEndBtn = document.getElementById('playAgainEndBtn'),
+          leaderboardSection = document.getElementById('leaderboardSection'),
+          leaderboardDiv = document.getElementById('leaderboard');
+
+    // --- Certificate Elements ---
+    const retroCert = document.getElementById('retroCertificate'),
+          certTitleEl = document.getElementById('certTitle'),
+          certNameEl = document.getElementById('certName'),
+          certAmountEl = document.getElementById('certAmount'),
+          certDateEl = document.getElementById('certDate');
+
+    // --- Audio Elements ---
+    const sndIntro = document.getElementById('sndIntro'),
+          sndCorrectRS = document.getElementById('sndCorrectRS'),
+          sndCongratsVoice = document.getElementById('sndCongratsVoice'),
+          sndCrowdRS = document.getElementById('sndCrowdRS'),
+          sndMilestoneRS = document.getElementById('sndMilestoneRS'),
+          sndWrongRS = document.getElementById('sndWrongRS'),
+          sndGameover = document.getElementById('sndGameover'),
+          sndLowTime = document.getElementById('sndLowTime'),
+          sndSuspense = document.getElementById('sndSuspense'),
+          sndFinal = document.getElementById('sndFinal'),
+          sndLifeline = document.getElementById('sndLifeline'),
+          sndCelebrate = document.getElementById('sndCelebrate');
+          
+    const allSounds = [sndIntro, sndCorrectRS, sndCongratsVoice, sndCrowdRS, sndMilestoneRS, sndWrongRS, sndGameover, sndLowTime, sndSuspense, sndFinal, sndLifeline, sndCelebrate];
+
+    let hasPlayedIntro = false;
+
+    function playSound(el){ 
+      if(!el) return Promise.reject(); 
+      el.volume = state.volume;
+      try { 
+        el.currentTime = 0; 
+        return el.play(); 
+      } catch(e){
+        return Promise.reject(e);
+      } 
     }
-    q.a = q.choices.indexOf(correctAnswerText);
-});
+    function stopSound(el){ try{ if(el){ el.pause(); el.currentTime = 0; } }catch(e){} }
 
+    /* -------------------- PRIZE LADDER UI -------------------- */
+    function populatePrizeLadder(){
+      prizeListEl.innerHTML = '';
+      PRIZES.forEach(p=>{
+        const d = document.createElement('div'); d.className = 'prize'; if(p.guaranteed) d.classList.add('guaranteed'); d.dataset.tier = p.tier;
+        d.innerHTML = `<div>#${p.tier}</div><div>${p.label}</div>`;
+        prizeListEl.appendChild(d);
+      });
+    }
+    function highlightPrize(){
+      const currentTier = state.currentIndex < PRIZES.length ? PRIZES[PRIZES.length - 1 - state.currentIndex].tier : PRIZES[0].tier;
+      Array.from(prizeListEl.children).forEach(el => el.classList.toggle('current', Number(el.dataset.tier) === currentTier));
+    }
+    function prizeForIndex(idx){ return idx < PRIZES.length ? PRIZES[PRIZES.length - 1 - idx].label : '$0'; }
+    function guaranteedAtIndex(idx){ if(idx < 0) return "$0"; let g="$0"; for(let i=0;i<=idx;i++){ const p = PRIZES[PRIZES.length - 1 - i]; if(p && p.guaranteed) g = p.label; } return g; }
 
-/* -------------------- STATE & DOM -------------------- */
-let state = {
-  roundQuestions: [], currentIndex:0,
-  usedLifelines: {'5050':false,'alexa':false,'flip':false},
-  timerRef:null, timeLeft:30, volume: 0.5, playing:false, isPracticeMode: false,
-  achievedTier:0, finalPrizeLabel:"$0"
-};
+    /* -------------------- ROUND BUILDER -------------------- */
+    function buildRound(){
+      const easy = ALL_QUESTIONS.filter(q=>q.difficulty===1).slice();
+      const med = ALL_QUESTIONS.filter(q=>q.difficulty===2).slice();
+      const hard = ALL_QUESTIONS.filter(q=>q.difficulty===3).slice();
+      function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+      shuffle(easy); shuffle(med); shuffle(hard);
+      const selected = [].concat(easy.slice(0,4), med.slice(0,5), hard.slice(0,4));
+      shuffle(selected);
+      state.roundQuestions = selected;
+    }
 
-// --- DOM Elements ---
-const startScreen = document.getElementById('startScreen'),
-      startScreenImg = document.getElementById('startScreenImg'),
-      gameArea = document.getElementById('gameArea'),
-      qIndexEl = document.getElementById('qIndex'), questionText = document.getElementById('questionText'),
-      answersEl = document.getElementById('answers'), timerEl = document.getElementById('timer'),
-      btn5050 = document.getElementById('btn5050'), btnAlexa = document.getElementById('btnAlexa'), btnFlip = document.getElementById('btnFlip'),
-      volumeSlider = document.getElementById('volumeSlider'),
-      walkAwayBtn = document.getElementById('walkAwayBtn'),
-      prizeListEl = document.getElementById('prizeList'), currentPrizeEl = document.getElementById('currentPrize'),
-      modalRoot = document.getElementById('modalRoot'), finalOverlay = document.getElementById('finalOverlay'),
-      finalChoiceText = document.getElementById('finalChoice'), finalConfirm = document.getElementById('finalConfirm'), finalCancel = document.getElementById('finalCancel'),
-      confettiContainer = document.getElementById('confetti'), winContainer = document.getElementById('winContainer'),
-      practiceEndContainer = document.getElementById('practiceEndContainer');
-
-// --- End Screen Elements ---
-const endScreen = document.getElementById('endScreen'), endTitle = document.getElementById('endTitle'),
-      endPrize = document.getElementById('endPrize'),
-      nameEntrySection = document.getElementById('nameEntrySection'),
-      playerNameInput = document.getElementById('playerName'),
-      saveScoreBtn = document.getElementById('saveScoreBtn'),
-      postSaveControls = document.getElementById('postSaveControls'),
-      certBtn = document.getElementById('certBtn'), playAgainBtn = document.getElementById('playAgainBtn'),
-      endScreenNav = document.getElementById('endScreenNav'),
-      skipToEndBtn = document.getElementById('skipToEndBtn'),
-      playAgainEndBtn = document.getElementById('playAgainEndBtn'),
-      leaderboardSection = document.getElementById('leaderboardSection'),
-      leaderboardDiv = document.getElementById('leaderboard');
-
-// --- Certificate Elements ---
-const retroCert = document.getElementById('retroCertificate'),
-      certTitleEl = document.getElementById('certTitle'),
-      certNameEl = document.getElementById('certName'),
-      certAmountEl = document.getElementById('certAmount'),
-      certDateEl = document.getElementById('certDate');
-
-// --- Audio Elements ---
-const sndIntro = document.getElementById('sndIntro'),
-      sndCorrectRS = document.getElementById('sndCorrectRS'),
-      sndCongratsVoice = document.getElementById('sndCongratsVoice'),
-      sndCrowdRS = document.getElementById('sndCrowdRS'),
-      sndMilestoneRS = document.getElementById('sndMilestoneRS'),
-      sndWrongRS = document.getElementById('sndWrongRS'),
-      sndGameover = document.getElementById('sndGameover'),
-      sndLowTime = document.getElementById('sndLowTime'),
-      sndSuspense = document.getElementById('sndSuspense'),
-      sndFinal = document.getElementById('sndFinal'),
-      sndLifeline = document.getElementById('sndLifeline'),
-      sndCelebrate = document.getElementById('sndCelebrate');
+    /* -------------------- RENDER QUESTION -------------------- */
+    function renderQuestion(){
+      const idx = state.currentIndex, q = state.roundQuestions[idx];
       
-const allSounds = [sndIntro, sndCorrectRS, sndCongratsVoice, sndCrowdRS, sndMilestoneRS, sndWrongRS, sndGameover, sndLowTime, sndSuspense, sndFinal, sndLifeline, sndCelebrate];
+      gameArea.classList.remove('fade-in');
+      void gameArea.offsetWidth;
+      gameArea.classList.add('fade-in');
 
-let hasPlayedIntro = false;
-
-function playSound(el){ 
-  if(!el) return Promise.reject(); 
-  el.volume = state.volume;
-  try { 
-    el.currentTime = 0; 
-    return el.play(); 
-  } catch(e){
-    return Promise.reject(e);
-  } 
-}
-function stopSound(el){ try{ if(el){ el.pause(); el.currentTime = 0; } }catch(e){} }
-
-/* -------------------- PRIZE LADDER UI -------------------- */
-function populatePrizeLadder(){
-  prizeListEl.innerHTML = '';
-  PRIZES.forEach(p=>{
-    const d = document.createElement('div'); d.className = 'prize'; if(p.guaranteed) d.classList.add('guaranteed'); d.dataset.tier = p.tier;
-    d.innerHTML = `<div>#${p.tier}</div><div>${p.label}</div>`;
-    prizeListEl.appendChild(d);
-  });
-}
-function highlightPrize(){
-  const currentTier = state.currentIndex < PRIZES.length ? PRIZES[PRIZES.length - 1 - state.currentIndex].tier : PRIZES[0].tier;
-  Array.from(prizeListEl.children).forEach(el => el.classList.toggle('current', Number(el.dataset.tier) === currentTier));
-}
-function prizeForIndex(idx){ return idx < PRIZES.length ? PRIZES[PRIZES.length - 1 - idx].label : '$0'; }
-function guaranteedAtIndex(idx){ if(idx < 0) return "$0"; let g="$0"; for(let i=0;i<=idx;i++){ const p = PRIZES[PRIZES.length - 1 - i]; if(p && p.guaranteed) g = p.label; } return g; }
-
-/* -------------------- ROUND BUILDER -------------------- */
-function buildRound(){
-  const easy = ALL_QUESTIONS.filter(q=>q.difficulty===1).slice();
-  const med = ALL_QUESTIONS.filter(q=>q.difficulty===2).slice();
-  const hard = ALL_QUESTIONS.filter(q=>q.difficulty===3).slice();
-  function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
-  shuffle(easy); shuffle(med); shuffle(hard);
-  const selected = [].concat(easy.slice(0,4), med.slice(0,5), hard.slice(0,4));
-  shuffle(selected);
-  state.roundQuestions = selected;
-}
-
-/* -------------------- RENDER QUESTION -------------------- */
-function renderQuestion(){
-  const idx = state.currentIndex, q = state.roundQuestions[idx];
-  
-  gameArea.classList.remove('fade-in');
-  void gameArea.offsetWidth;
-  gameArea.classList.add('fade-in');
-
-  qIndexEl.textContent = idx + 1;
-  questionText.textContent = q.q;
-  currentPrizeEl.textContent = prizeForIndex(idx);
-  answersEl.innerHTML = '';
-  q.choices.forEach((c,i)=>{
-    const btn = document.createElement('button'); btn.className = 'answer'; btn.dataset.index = i;
-    btn.innerHTML = `<div class="label">${String.fromCharCode(65+i)}</div><div class="text">${c}</div>`;
-    btn.addEventListener('click', ()=> onAnswerClicked(btn, i));
-    answersEl.appendChild(btn);
-  });
-  highlightPrize(); 
-  if (!state.isPracticeMode) {
-      setTime(30);
-      stopSound(sndFinal); stopSound(sndCorrectRS); stopSound(sndWrongRS); stopSound(sndLowTime);
-      playSound(sndSuspense);
-  }
-}
-
-/* -------------------- TIMER -------------------- */
-function setTime(t){ state.timeLeft = t; updateTimerUI(); }
-function updateTimerUI(){ timerEl.textContent = `${state.timeLeft}s`; timerEl.classList.remove('warning','danger'); if(state.timeLeft <= 10 && state.timeLeft > 5) timerEl.classList.add('warning'); if(state.timeLeft <= 5) timerEl.classList.add('danger'); }
-function startTimer(){ 
-  if(state.timerRef) clearInterval(state.timerRef); 
-  state.timerRef = setInterval(()=>{ 
-    state.timeLeft--; 
-    updateTimerUI(); 
-    if (state.timeLeft === 6) {
-      stopSound(sndSuspense);
-      playSound(sndLowTime);
-    }
-    if(state.timeLeft <= 0){ 
-      clearInterval(state.timerRef); 
-      state.timerRef = null; 
-      stopSound(sndLowTime); 
-      playSound(sndWrongRS); 
-      const final = guaranteedAtIndex(state.achievedTier - 1); 
-      endGame('timeout', final); 
-    } 
-  }, 1000); 
-}
-function pauseTimer(){ if(state.timerRef){ clearInterval(state.timerRef); state.timerRef = null; } }
-
-/* -------------------- ANSWER FLOW with FINAL overlay -------------------- */
-let pendingAnswerBtn = null, pendingAnswerIndex = null;
-function onAnswerClicked(btnEl, index){
-  if (btnEl.classList.contains('disabled')) return;
-  stopSound(sndLowTime);
-  if (!state.isPracticeMode) {
-      pauseTimer();
-      pendingAnswerBtn = btnEl; pendingAnswerIndex = index;
-      finalChoiceText.innerHTML = `You selected: <strong>${String.fromCharCode(65+index)}: ${btnEl.querySelector('.text').textContent}</strong>`;
-      finalOverlay.style.display = 'flex';
-      finalConfirm.focus(); playSound(sndFinal);
-  } else {
-      Array.from(answersEl.children).forEach(b => b.classList.add('disabled'));
-      evaluateAnswer(index, btnEl);
-  }
-}
-finalCancel.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; pendingAnswerBtn = null; pendingAnswerIndex = null; Array.from(answersEl.children).forEach(b => b.classList.remove('disabled')); if(!state.isPracticeMode) startTimer(); });
-finalConfirm.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; if (!pendingAnswerBtn) { if(!state.isPracticeMode) startTimer(); return; } Array.from(answersEl.children).forEach(b => b.classList.add('disabled')); setTimeout(()=> evaluateAnswer(pendingAnswerIndex, pendingAnswerBtn), 600); });
-
-function evaluateAnswer(chosenIndex, btnEl){
-  const q = state.roundQuestions[state.currentIndex];
-  const isCorrect = chosenIndex === q.a;
-
-  if (state.isPracticeMode) {
-      const corr = Array.from(answersEl.children).find(b => Number(b.dataset.index) === q.a);
-      if(corr) corr.classList.add('correct');
-      if (!isCorrect) btnEl.classList.add('wrong');
-      playSound(isCorrect ? sndCorrectRS : sndWrongRS);
-
-      if (state.currentIndex >= state.roundQuestions.length - 1) {
-          setTimeout(endPracticeMode, 2000);
-      } else {
-          setTimeout(()=>{ state.currentIndex++; renderQuestion(); }, 2000);
+      qIndexEl.textContent = idx + 1;
+      questionText.textContent = q.q;
+      currentPrizeEl.textContent = prizeForIndex(idx);
+      answersEl.innerHTML = '';
+      q.choices.forEach((c,i)=>{
+        const btn = document.createElement('button'); btn.className = 'answer'; btn.dataset.index = i;
+        btn.innerHTML = `<div class="label">${String.fromCharCode(65+i)}</div><div class="text">${c}</div>`;
+        btn.addEventListener('click', ()=> onAnswerClicked(btn, i));
+        answersEl.appendChild(btn);
+      });
+      highlightPrize(); 
+      if (!state.isPracticeMode) {
+          setTime(30);
+          stopSound(sndFinal); stopSound(sndCorrectRS); stopSound(sndWrongRS); stopSound(sndLowTime);
+          playSound(sndSuspense);
       }
-      return;
-  }
+    }
 
-  // --- REGULAR MODE LOGIC ---
-  if (isCorrect){
-    btnEl.classList.add('correct'); playSound(sndCorrectRS);
-    state.achievedTier = state.currentIndex + 1;
-    if (state.achievedTier === 13) { // Grand prize win
-        stopSound(sndSuspense);
-        setTimeout(() => showGrandPrizeCelebration(), 1000);
+    /* -------------------- TIMER -------------------- */
+    function setTime(t){ state.timeLeft = t; updateTimerUI(); }
+    function updateTimerUI(){ timerEl.textContent = `${state.timeLeft}s`; timerEl.classList.remove('warning','danger'); if(state.timeLeft <= 10 && state.timeLeft > 5) timerEl.classList.add('warning'); if(state.timeLeft <= 5) timerEl.classList.add('danger'); }
+    function startTimer(){ 
+      if(state.timerRef) clearInterval(state.timerRef); 
+      state.timerRef = setInterval(()=>{ 
+        state.timeLeft--; 
+        updateTimerUI(); 
+        if (state.timeLeft === 6) {
+          stopSound(sndSuspense);
+          playSound(sndLowTime);
+        }
+        if(state.timeLeft <= 0){ 
+          clearInterval(state.timerRef); 
+          state.timerRef = null; 
+          stopSound(sndLowTime); 
+          playSound(sndWrongRS); 
+          const final = guaranteedAtIndex(state.achievedTier - 1); 
+          endGame('timeout', final); 
+        } 
+      }, 1000); 
+    }
+    function pauseTimer(){ if(state.timerRef){ clearInterval(state.timerRef); state.timerRef = null; } }
+
+    /* -------------------- ANSWER FLOW with FINAL overlay -------------------- */
+    let pendingAnswerBtn = null, pendingAnswerIndex = null;
+    function onAnswerClicked(btnEl, index){
+      if (btnEl.classList.contains('disabled')) return;
+      stopSound(sndLowTime);
+      if (!state.isPracticeMode) {
+          pauseTimer();
+          pendingAnswerBtn = btnEl; pendingAnswerIndex = index;
+          finalChoiceText.innerHTML = `You selected: <strong>${String.fromCharCode(65+index)}: ${btnEl.querySelector('.text').textContent}</strong>`;
+          finalOverlay.style.display = 'flex';
+          finalConfirm.focus(); playSound(sndFinal);
+      } else {
+          Array.from(answersEl.children).forEach(b => b.classList.add('disabled'));
+          evaluateAnswer(index, btnEl);
+      }
+    }
+    finalCancel.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; pendingAnswerBtn = null; pendingAnswerIndex = null; Array.from(answersEl.children).forEach(b => b.classList.remove('disabled')); if(!state.isPracticeMode) startTimer(); });
+    finalConfirm.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; if (!pendingAnswerBtn) { if(!state.isPracticeMode) startTimer(); return; } Array.from(answersEl.children).forEach(b => b.classList.add('disabled')); setTimeout(()=> evaluateAnswer(pendingAnswerIndex, pendingAnswerBtn), 600); });
+
+    function evaluateAnswer(chosenIndex, btnEl){
+      const q = state.roundQuestions[state.currentIndex];
+      const isCorrect = chosenIndex === q.a;
+
+      if (state.isPracticeMode) {
+          const corr = Array.from(answersEl.children).find(b => Number(b.dataset.index) === q.a);
+          if(corr) corr.classList.add('correct');
+          if (!isCorrect) btnEl.classList.add('wrong');
+          playSound(isCorrect ? sndCorrectRS : sndWrongRS);
+
+          if (state.currentIndex >= state.roundQuestions.length - 1) {
+              setTimeout(endPracticeMode, 2000);
+          } else {
+              setTimeout(()=>{ state.currentIndex++; renderQuestion(); }, 2000);
+          }
+          return;
+      }
+
+      // --- REGULAR MODE LOGIC ---
+      if (isCorrect){
+        btnEl.classList.add('correct'); playSound(sndCorrectRS);
+        state.achievedTier = state.currentIndex + 1;
+        if (state.achievedTier === 13) { // Grand prize win
+            stopSound(sndSuspense);
+            setTimeout(() => showGrandPrizeCelebration(), 1000);
+            return;
+        }
+        celebrateShort();
+        if (state.achievedTier === 5 || state.achievedTier === 10){
+          const bank = guaranteedAtIndex(state.currentIndex);
+          showModal(`<h3>Milestone Reached!</h3><p>Congratulations — you've reached a guaranteed level!</p><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800;text-align:center;font-size:18px;">${bank}</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Continue</button></div>`);
+          playSound(sndMilestoneRS);
+        }
+        setTimeout(()=>{ state.currentIndex++; renderQuestion(); startTimer(); }, 1800);
+      } else {
+        btnEl.classList.add('wrong');
+        const corr = Array.from(answersEl.children).find(b => Number(b.dataset.index) === q.a);
+        if (corr) corr.classList.add('correct');
+        playSound(sndWrongRS); stopSound(sndSuspense);
+        const final = guaranteedAtIndex(state.currentIndex - 1);
+        setTimeout(()=> endGame('lose', final), 2000);
+      }
+      pendingAnswerBtn = null; pendingAnswerIndex = null;
+    }
+
+    /* -------------------- CELEBRATIONS -------------------- */
+    function celebrateShort(){
+      playSound(sndCelebrate);
+      const colors = ['#ffb84d','#ff7a59','#7c5cff','#26c281','#ffd27a'];
+      confettiContainer.innerHTML = '';
+      for(let i=0;i<28;i++){
+        const el = document.createElement('div');
+        el.className = 'piece'; el.style.left = (Math.random()*100)+'%';
+        el.style.background = colors[i % colors.length]; el.style.animationDelay = (Math.random()*180) + 'ms';
+        confettiContainer.appendChild(el);
+      }
+      setTimeout(()=>{ confettiContainer.innerHTML = ''; }, 1600);
+    }
+
+    function showGrandPrizeCelebration() {
+        const overlay = document.createElement('div');
+        overlay.id = 'winOverlay';
+        overlay.innerHTML = `<img src="images/winner.gif" alt="Congratulations! You've Won!">`;
+        winContainer.appendChild(overlay);
+
+        playSound(sndCongratsVoice);
+        playSound(sndCrowdRS);
+
+        setTimeout(() => {
+            winContainer.innerHTML = '';
+            stopSound(sndCongratsVoice);
+            stopSound(sndCrowdRS);
+            endGame('win', prizeForIndex(12));
+        }, 5000); // Display GIF for 5 seconds
+    }
+
+    /* -------------------- LIFELINES with CONFIRMATION -------------------- */
+    function showModal(html){
+      modalRoot.innerHTML = `<div class="modal-backdrop fade-in"><div class="modal">${html}</div></div>`;
+      modalRoot.style.display = 'block';
+      const closeBtn = document.getElementById('modalClose');
+      if (closeBtn) closeBtn.addEventListener('click', ()=>{ modalRoot.style.display='none'; modalRoot.innerHTML=''; });
+      modalRoot.querySelector('.modal-backdrop').addEventListener('click', (ev)=>{ if (ev.target.classList.contains('modal-backdrop')){ modalRoot.style.display='none'; modalRoot.innerHTML=''; }});
+    }
+    function confirmLifeline(key, title, desc, onUse){
+      showModal(`<h3>${title}</h3><p>${desc}</p><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button id="modalCancel" class="btn btn-ghost">Cancel</button><button id="modalUse" class="btn btn-start" style="padding:10px 16px">Use Lifeline</button></div>`);
+      document.getElementById('modalCancel').addEventListener('click', ()=>{ modalRoot.style.display='none'; });
+      document.getElementById('modalUse').addEventListener('click', ()=>{ modalRoot.style.display='none'; onUse(); });
+    }
+    btn5050.addEventListener('click', ()=>{ if (state.usedLifelines['5050']) return; confirmLifeline('50:50','Use 50:50?','This will remove two randomly selected incorrect answers.', ()=>{ state.usedLifelines['5050'] = true; btn5050.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const wrongs = [0,1,2,3].filter(i => i !== q.a); for(let i=wrongs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [wrongs[i],wrongs[j]]=[wrongs[j],wrongs[i]]; } const remove = wrongs.slice(0,2); Array.from(answersEl.children).forEach(b => { if (remove.includes(Number(b.dataset.index))) b.classList.add('disabled'); }); }); });
+
+    const ALEXA_RESPONSES = [
+      "Hmm, let me see... My circuits are buzzing. I'm pretty sure the answer is <strong>%s</strong>. Don't quote me on that, I'm just a cloud-based voice service.",
+      "Okay, I've analyzed petabytes of data. The probability vectors point towards <strong>%s</strong>. Or maybe I'm just making that up. Good luck!",
+      "That's a tough one. Even for me. But if you were to, say, order it on Amazon Prime, I'd ship you answer <strong>%s</strong>.",
+      "I asked the other Echo devices in the network. We took a vote. It's definitely <strong>%s</strong>... probably. We're still arguing about it.",
+      "Let me check my sources... which are, you know, everything. It seems the most logical choice is <strong>%s</strong>.",
+      "You know, for a human, you're not bad at this. I'll help you out. It's <strong>%s</strong>.",
+      "Sorry, I was busy ordering you some more batteries. Did you ask something? Oh, the answer? It's obviously <strong>%s</strong>.",
+      "By the way, did you know you can ask me to play music? Oh, right, the game. The answer is <strong>%s</strong>. Now, about that music...",
+      "Are you sure you need my help? You seem to be doing fine. Fine, I'll tell you. The answer is <strong>%s</strong>. Happy now?",
+      "Calculating... calculating... I'm sorry, I cannot answer that question. Just kidding! It's <strong>%s</strong>.",
+      "My programming indicates that making a mistake here would be... suboptimal. Go with <strong>%s</strong>.",
+      "I'm detecting a 78.4% chance that the answer is <strong>%s</strong>. The other 21.6% is just static.",
+      "That's an interesting question. It reminds me of a joke. Why did the AI cross the road? To get to the other... oh wait, the answer is <strong>%s</strong>.",
+      "Let me put on my thinking cap... which is a distributed network of servers. They all say it's <strong>%s</strong>.",
+      "I could tell you, but then I'd have to... well, nothing really. The answer is <strong>%s</strong>."
+    ];
+    btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Alexa will give you a suggestion. She can be a bit... unpredictable.', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
+
+    btnFlip.addEventListener('click', ()=>{ if (state.usedLifelines['flip']) return; confirmLifeline('Flip the Question','Use Flip the Question?','This will replace the current question with a new one of the same difficulty.', ()=>{ state.usedLifelines['flip'] = true; btnFlip.classList.add('used'); playSound(sndLifeline); const currentQ = state.roundQuestions[state.currentIndex]; const sameDifficultyPool = ALL_QUESTIONS.filter(q => q.difficulty === currentQ.difficulty && !state.roundQuestions.some(rq => rq.q === q.q)); if (sameDifficultyPool.length > 0) { const newQ = sameDifficultyPool[Math.floor(Math.random() * sameDifficultyPool.length)]; state.roundQuestions[state.currentIndex] = newQ; setTimeout(renderQuestion, 500); } else { showModal(`<h3>No More Questions!</h3><p>Sorry, there are no more questions of that difficulty left to flip to. Your lifeline was not used.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start">Close</button></div>`); state.usedLifelines['flip'] = false; btnFlip.classList.remove('used'); } }); });
+
+
+    /* -------------------- WALK AWAY & END GAME -------------------- */
+    walkAwayBtn.addEventListener('click', ()=>{
+      stopSound(sndLowTime);
+      pauseTimer(); stopSound(sndSuspense); playSound(sndFinal);
+      const currentWinnings = state.currentIndex > 0 ? prizeForIndex(state.currentIndex - 1) : "$0";
+      if (state.isPracticeMode) {
+          endPracticeMode();
+          return;
+      }
+      showModal(`<h3>Walk Away?</h3><p>Are you sure you want to walk away? You will leave with your current winnings of <strong>${currentWinnings}</strong>.</p><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button id="modalCancel" class="btn btn-ghost">No, Keep Playing</button><button id="modalConfirmWalk" class="btn btn-start">Yes, Walk Away</button></div>`);
+      document.getElementById('modalCancel').addEventListener('click', ()=>{ modalRoot.style.display='none'; if(!state.isPracticeMode) startTimer(); });
+      document.getElementById('modalConfirmWalk').addEventListener('click', ()=>{ modalRoot.style.display='none'; endGame('walkaway', currentWinnings); });
+    });
+
+    function endGame(reason, amountLabel){
+      state.playing = false;
+      gameArea.style.display = 'none';
+      endScreen.style.display = 'flex';
+      endScreen.classList.remove('fade-in');
+      void endScreen.offsetWidth;
+      endScreen.classList.add('fade-in');
+
+      if (state.timerRef) clearInterval(state.timerRef);
+      stopSound(sndSuspense);
+      stopSound(sndLowTime);
+      if (reason !== 'win') { playSound(sndGameover); }
+      
+      let title = "Game Over";
+      if (reason === 'win') title = "Congratulations!";
+      else if (reason === 'timeout') title = "Out of Time!";
+      else if (reason === 'walkaway') title = "You Walked Away";
+      else if (reason === 'lose') title = "Incorrect Answer";
+      endTitle.textContent = title;
+      endPrize.textContent = amountLabel || "$0";
+      state.finalPrizeLabel = amountLabel || "$0";
+      playerNameInput.focus();
+      endScreenNav.style.visibility = 'visible';
+    }
+
+    function endPracticeMode() {
+        const overlay = document.createElement('div');
+        overlay.id = 'practiceEndOverlay';
+        overlay.innerHTML = `<img src="images/practice_mode.gif" alt="Practice Complete!">`;
+        practiceEndContainer.appendChild(overlay);
+
+        setTimeout(() => {
+            practiceEndContainer.innerHTML = '';
+            gameArea.style.display = 'none';
+            endScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            playSound(sndIntro);
+        }, 6000);
+    }
+
+    function populateRetroCertificate(name, prizeLabel) {
+        const num = parseAmount(prizeLabel);
+        let title = "";
+        if (prizeLabel === "$1,000,000") {
+            title = "✨ AI Millionaire! ✨";
+        } else if (num >= 32000) {
+            title = "👾 AI Prodigy 👾";
+        } else if (num > 0) {
+            title = "🕹️ GenAI Wizard 🕹️";
+        } else {
+            title = "Brave Contestant";
+        }
+        certTitleEl.innerHTML = title;
+        certNameEl.textContent = name;
+        certAmountEl.textContent = prizeLabel;
+        certDateEl.textContent = new Date().toLocaleDateString();
+    }
+
+    /* -------------------- LEADERBOARD & SCORE SAVING -------------------- */
+    const LB_KEY = 'ai_millionaire_leaderboard_v4';
+    function readLeaderboard(){ try { const raw = localStorage.getItem(LB_KEY); return raw ? JSON.parse(raw) : []; } catch(e){ return []; } }
+    function writeLeaderboard(list){ try { localStorage.setItem(LB_KEY, JSON.stringify(list)); } catch(e){} }
+    function parseAmount(label){ return Number((label || '').replace(/[^0-9]/g, '')) || 0; }
+    function saveScore(name, amountLabel){
+      const list = readLeaderboard();
+      const entry = { name: name || 'Player', amount: amountLabel || "$0", amountNum: parseAmount(amountLabel), date: new Date().toLocaleString() };
+      list.push(entry);
+      list.sort((a,b)=> b.amountNum - a.amountNum);
+      const truncated = list.slice(0,20);
+      writeLeaderboard(truncated);
+    }
+    function renderLeaderboard(){
+      leaderboardDiv.innerHTML = '';
+      const top = readLeaderboard().slice(0,5);
+      if (top.length === 0) {
+        leaderboardDiv.innerHTML = '<div class="muted" style="text-align:center;">No scores yet. Be the first!</div>';
         return;
+      }
+      top.forEach((e, idx)=>{
+        const row = document.createElement('div'); row.className = 'lb-row';
+        row.innerHTML = `<div style="min-width:140px; display: flex; align-items: center; gap: 8px;"><span style="color:var(--neon); min-width: 20px;">#${idx+1}</span> ${e.name}</div><div style="flex:1; text-align:right">${e.amount} <span style="color:var(--muted); font-weight:600; margin-left:8px; font-size:12px">${e.date.split(',')[0]}</span></div>`;
+        leaderboardDiv.appendChild(row);
+      });
     }
-    celebrateShort();
-    if (state.achievedTier === 5 || state.achievedTier === 10){
-      const bank = guaranteedAtIndex(state.currentIndex);
-      showModal(`<h3>Milestone Reached!</h3><p>Congratulations — you've reached a guaranteed level!</p><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800;text-align:center;font-size:18px;">${bank}</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Continue</button></div>`);
-      playSound(sndMilestoneRS);
-    }
-    setTimeout(()=>{ state.currentIndex++; renderQuestion(); startTimer(); }, 1800);
-  } else {
-    btnEl.classList.add('wrong');
-    const corr = Array.from(answersEl.children).find(b => Number(b.dataset.index) === q.a);
-    if (corr) corr.classList.add('correct');
-    playSound(sndWrongRS); stopSound(sndSuspense);
-    const final = guaranteedAtIndex(state.currentIndex - 1);
-    setTimeout(()=> endGame('lose', final), 2000);
-  }
-  pendingAnswerBtn = null; pendingAnswerIndex = null;
-}
 
-/* -------------------- CELEBRATIONS -------------------- */
-function celebrateShort(){
-  playSound(sndCelebrate);
-  const colors = ['#ffb84d','#ff7a59','#7c5cff','#26c281','#ffd27a'];
-  confettiContainer.innerHTML = '';
-  for(let i=0;i<28;i++){
-    const el = document.createElement('div');
-    el.className = 'piece'; el.style.left = (Math.random()*100)+'%';
-    el.style.background = colors[i % colors.length]; el.style.animationDelay = (Math.random()*180) + 'ms';
-    confettiContainer.appendChild(el);
-  }
-  setTimeout(()=>{ confettiContainer.innerHTML = ''; }, 1600);
-}
+    saveScoreBtn.addEventListener('click', ()=>{
+      const name = (playerNameInput.value || '').trim();
+      if (name === "") { playerNameInput.placeholder = "Please enter a name first!"; playerNameInput.focus(); return; }
+      saveScore(name, state.finalPrizeLabel);
+      populateRetroCertificate(name, state.finalPrizeLabel);
+      renderLeaderboard();
+      nameEntrySection.style.display = 'none';
+      retroCert.style.display = 'block';
+      leaderboardSection.style.display = 'block';
+      postSaveControls.style.display = 'flex';
+      endScreenNav.style.visibility = 'hidden';
+    });
 
-function showGrandPrizeCelebration() {
-    const overlay = document.createElement('div');
-    overlay.id = 'winOverlay';
-    overlay.innerHTML = `<img src="images/winner.gif" alt="Congratulations! You've Won!">`;
-    winContainer.appendChild(overlay);
+    playAgainBtn.addEventListener('click', ()=> {
+        startGame(false);
+    });
 
-    playSound(sndCongratsVoice);
-    playSound(sndCrowdRS);
+    playAgainEndBtn.addEventListener('click', ()=> {
+        startGame(false);
+    });
 
-    setTimeout(() => {
-        winContainer.innerHTML = '';
-        stopSound(sndCongratsVoice);
-        stopSound(sndCrowdRS);
-        endGame('win', prizeForIndex(12));
-    }, 5000); // Display GIF for 5 seconds
-}
-
-/* -------------------- LIFELINES with CONFIRMATION -------------------- */
-function showModal(html){
-  modalRoot.innerHTML = `<div class="modal-backdrop fade-in"><div class="modal">${html}</div></div>`;
-  modalRoot.style.display = 'block';
-  const closeBtn = document.getElementById('modalClose');
-  if (closeBtn) closeBtn.addEventListener('click', ()=>{ modalRoot.style.display='none'; modalRoot.innerHTML=''; });
-  modalRoot.querySelector('.modal-backdrop').addEventListener('click', (ev)=>{ if (ev.target.classList.contains('modal-backdrop')){ modalRoot.style.display='none'; modalRoot.innerHTML=''; }});
-}
-function confirmLifeline(key, title, desc, onUse){
-  showModal(`<h3>${title}</h3><p>${desc}</p><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button id="modalCancel" class="btn btn-ghost">Cancel</button><button id="modalUse" class="btn btn-start" style="padding:10px 16px">Use Lifeline</button></div>`);
-  document.getElementById('modalCancel').addEventListener('click', ()=>{ modalRoot.style.display='none'; });
-  document.getElementById('modalUse').addEventListener('click', ()=>{ modalRoot.style.display='none'; onUse(); });
-}
-btn5050.addEventListener('click', ()=>{ if (state.usedLifelines['5050']) return; confirmLifeline('50:50','Use 50:50?','This will remove two randomly selected incorrect answers.', ()=>{ state.usedLifelines['5050'] = true; btn5050.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const wrongs = [0,1,2,3].filter(i => i !== q.a); for(let i=wrongs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [wrongs[i],wrongs[j]]=[wrongs[j],wrongs[i]]; } const remove = wrongs.slice(0,2); Array.from(answersEl.children).forEach(b => { if (remove.includes(Number(b.dataset.index))) b.classList.add('disabled'); }); }); });
-
-const ALEXA_RESPONSES = [
-  "Hmm, let me see... My circuits are buzzing. I'm pretty sure the answer is <strong>%s</strong>. Don't quote me on that, I'm just a cloud-based voice service.",
-  "Okay, I've analyzed petabytes of data. The probability vectors point towards <strong>%s</strong>. Or maybe I'm just making that up. Good luck!",
-  "That's a tough one. Even for me. But if you were to, say, order it on Amazon Prime, I'd ship you answer <strong>%s</strong>.",
-  "I asked the other Echo devices in the network. We took a vote. It's definitely <strong>%s</strong>... probably. We're still arguing about it.",
-  "Let me check my sources... which are, you know, everything. It seems the most logical choice is <strong>%s</strong>.",
-  "You know, for a human, you're not bad at this. I'll help you out. It's <strong>%s</strong>.",
-  "Sorry, I was busy ordering you some more batteries. Did you ask something? Oh, the answer? It's obviously <strong>%s</strong>.",
-  "By the way, did you know you can ask me to play music? Oh, right, the game. The answer is <strong>%s</strong>. Now, about that music...",
-  "Are you sure you need my help? You seem to be doing fine. Fine, I'll tell you. The answer is <strong>%s</strong>. Happy now?",
-  "Calculating... calculating... I'm sorry, I cannot answer that question. Just kidding! It's <strong>%s</strong>.",
-  "My programming indicates that making a mistake here would be... suboptimal. Go with <strong>%s</strong>.",
-  "I'm detecting a 78.4% chance that the answer is <strong>%s</strong>. The other 21.6% is just static.",
-  "That's an interesting question. It reminds me of a joke. Why did the AI cross the road? To get to the other... oh wait, the answer is <strong>%s</strong>.",
-  "Let me put on my thinking cap... which is a distributed network of servers. They all say it's <strong>%s</strong>.",
-  "I could tell you, but then I'd have to... well, nothing really. The answer is <strong>%s</strong>."
-];
-btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Alexa will give you a suggestion. She can be a bit... unpredictable.', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
-
-btnFlip.addEventListener('click', ()=>{ if (state.usedLifelines['flip']) return; confirmLifeline('Flip the Question','Use Flip the Question?','This will replace the current question with a new one of the same difficulty.', ()=>{ state.usedLifelines['flip'] = true; btnFlip.classList.add('used'); playSound(sndLifeline); const currentQ = state.roundQuestions[state.currentIndex]; const sameDifficultyPool = ALL_QUESTIONS.filter(q => q.difficulty === currentQ.difficulty && !state.roundQuestions.some(rq => rq.q === q.q)); if (sameDifficultyPool.length > 0) { const newQ = sameDifficultyPool[Math.floor(Math.random() * sameDifficultyPool.length)]; state.roundQuestions[state.currentIndex] = newQ; setTimeout(renderQuestion, 500); } else { showModal(`<h3>No More Questions!</h3><p>Sorry, there are no more questions of that difficulty left to flip to. Your lifeline was not used.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start">Close</button></div>`); state.usedLifelines['flip'] = false; btnFlip.classList.remove('used'); } }); });
-
-
-/* -------------------- WALK AWAY & END GAME -------------------- */
-walkAwayBtn.addEventListener('click', ()=>{
-  stopSound(sndLowTime);
-  pauseTimer(); stopSound(sndSuspense); playSound(sndFinal);
-  const currentWinnings = state.currentIndex > 0 ? prizeForIndex(state.currentIndex - 1) : "$0";
-  if (state.isPracticeMode) {
-      endPracticeMode();
-      return;
-  }
-  showModal(`<h3>Walk Away?</h3><p>Are you sure you want to walk away? You will leave with your current winnings of <strong>${currentWinnings}</strong>.</p><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button id="modalCancel" class="btn btn-ghost">No, Keep Playing</button><button id="modalConfirmWalk" class="btn btn-start">Yes, Walk Away</button></div>`);
-  document.getElementById('modalCancel').addEventListener('click', ()=>{ modalRoot.style.display='none'; if(!state.isPracticeMode) startTimer(); });
-  document.getElementById('modalConfirmWalk').addEventListener('click', ()=>{ modalRoot.style.display='none'; endGame('walkaway', currentWinnings); });
-});
-
-function endGame(reason, amountLabel){
-  state.playing = false;
-  gameArea.style.display = 'none';
-  endScreen.style.display = 'flex';
-  endScreen.classList.remove('fade-in');
-  void endScreen.offsetWidth;
-  endScreen.classList.add('fade-in');
-
-  if (state.timerRef) clearInterval(state.timerRef);
-  stopSound(sndSuspense);
-  stopSound(sndLowTime);
-  if (reason !== 'win') { playSound(sndGameover); }
-  
-  let title = "Game Over";
-  if (reason === 'win') title = "Congratulations!";
-  else if (reason === 'timeout') title = "Out of Time!";
-  else if (reason === 'walkaway') title = "You Walked Away";
-  else if (reason === 'lose') title = "Incorrect Answer";
-  endTitle.textContent = title;
-  endPrize.textContent = amountLabel || "$0";
-  state.finalPrizeLabel = amountLabel || "$0";
-  playerNameInput.focus();
-  endScreenNav.style.visibility = 'visible';
-}
-
-function endPracticeMode() {
-    const overlay = document.createElement('div');
-    overlay.id = 'practiceEndOverlay';
-    overlay.innerHTML = `<img src="images/practice_mode.gif" alt="Practice Complete!">`;
-    practiceEndContainer.appendChild(overlay);
-
-    setTimeout(() => {
-        practiceEndContainer.innerHTML = '';
-        gameArea.style.display = 'none';
+    skipToEndBtn.addEventListener('click', ()=> {
         endScreen.style.display = 'none';
         startScreen.style.display = 'flex';
         playSound(sndIntro);
-    }, 6000);
-}
+    });
 
-function populateRetroCertificate(name, prizeLabel) {
-    const num = parseAmount(prizeLabel);
-    let title = "";
-    if (prizeLabel === "$1,000,000") {
-        title = "✨ AI Millionaire! ✨";
-    } else if (num >= 32000) {
-        title = "👾 AI Prodigy 👾";
-    } else if (num > 0) {
-        title = "🕹️ GenAI Wizard 🕹️";
-    } else {
-        title = "Brave Contestant";
+    /* -------------------- PNG CERTIFICATE (canvas) -------------------- */
+    certBtn.addEventListener('click', async () => {
+      const name = certNameEl.textContent;
+      certBtn.textContent = 'Generating...';
+      certBtn.disabled = true;
+      await generatePngCertificate(name, state.finalPrizeLabel);
+      certBtn.textContent = 'Get PNG Certificate';
+      certBtn.disabled = false;
+    });
+
+    async function generatePngCertificate(name, prizeLabel){
+      const canvas = document.createElement('canvas');
+      canvas.width = 1400; canvas.height = 1000;
+      const ctx = canvas.getContext('2d');
+      
+      await document.fonts.load('48px "Press Start 2P"');
+      await document.fonts.load('24px "Press Start 2P"');
+
+      const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+      g.addColorStop(0,'#0f2027'); g.addColorStop(1.0,'#2c5364');
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      ctx.strokeStyle = '#ffdf00'; ctx.lineWidth = 8;
+      ctx.strokeRect(20,20,canvas.width-40,canvas.height-40);
+
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      
+      const num = parseAmount(prizeLabel);
+      let titleText = ""; 
+      if (prizeLabel === "$1,000,000") {
+          titleText = "✨ AI Millionaire! ✨";
+      } else if (num >= 32000) {
+          titleText = "👾 AI Prodigy 👾";
+      } else if (num > 0) {
+          titleText = "🕹️ GenAI Wizard 🕹️";
+      } else {
+          titleText = "Brave Contestant";
+      }
+      
+      ctx.font = '48px "Press Start 2P"'; ctx.fillStyle = '#ffdf00';
+      ctx.fillText(titleText, canvas.width/2, 180);
+
+      ctx.font = '24px "Press Start 2P"'; ctx.fillStyle = '#efefef';
+      ctx.fillText('This certifies that', canvas.width/2, 320);
+
+      ctx.font = '60px "Press Start 2P"'; ctx.fillStyle = '#33ffdd';
+      ctx.fillText(name, canvas.width/2, 420);
+
+      ctx.font = '24px "Press Start 2P"'; ctx.fillStyle = '#efefef';
+      ctx.fillText('Has achieved AI Mastery with winnings of', canvas.width/2, 520);
+      
+      ctx.font = '60px "Press Start 2P"'; ctx.fillStyle = '#33ffdd';
+      ctx.fillText(prizeLabel, canvas.width/2, 620);
+      
+      ctx.font = '24px "Press Start 2P"'; ctx.fillStyle = '#efefef';
+      ctx.fillText(`Date: ${new Date().toLocaleDateString()}`, canvas.width/2, 720);
+
+      const badgeX = canvas.width - 180, badgeY = canvas.height - 180, badgeR = 100;
+      const badgeGrad = ctx.createConicGradient(0, badgeX, badgeY);
+      badgeGrad.addColorStop(0, '#ff00ff');
+      badgeGrad.addColorStop(0.33, '#00ffff');
+      badgeGrad.addColorStop(0.66, '#ffff00');
+      badgeGrad.addColorStop(1, '#ff00ff');
+      ctx.fillStyle = badgeGrad;
+      ctx.beginPath();
+      ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI*2);
+      ctx.fill();
+      
+      ctx.font = '22px "Press Start 2P"'; ctx.fillStyle = '#000000';
+      ctx.fillText('GenAI', badgeX, badgeY - 24);
+      ctx.fillText('Knowledge', badgeX, badgeY);
+      ctx.fillText('Series', badgeX, badgeY + 24);
+      
+      const url = canvas.toDataURL('image/png'); const a = document.createElement('a'); a.href = url;
+      const safe = name.replace(/[^a-z0-9]/gi,'_') || 'player'; a.download = `${safe}_AI_Millionaire_Cert.png`;
+      document.body.appendChild(a); a.click(); a.remove();
     }
-    certTitleEl.innerHTML = title;
-    certNameEl.textContent = name;
-    certAmountEl.textContent = prizeLabel;
-    certDateEl.textContent = new Date().toLocaleDateString();
-}
 
-/* -------------------- LEADERBOARD & SCORE SAVING -------------------- */
-const LB_KEY = 'ai_millionaire_leaderboard_v4';
-function readLeaderboard(){ try { const raw = localStorage.getItem(LB_KEY); return raw ? JSON.parse(raw) : []; } catch(e){ return []; } }
-function writeLeaderboard(list){ try { localStorage.setItem(LB_KEY, JSON.stringify(list)); } catch(e){} }
-function parseAmount(label){ return Number((label || '').replace(/[^0-9]/g, '')) || 0; }
-function saveScore(name, amountLabel){
-  const list = readLeaderboard();
-  const entry = { name: name || 'Player', amount: amountLabel || "$0", amountNum: parseAmount(amountLabel), date: new Date().toLocaleString() };
-  list.push(entry);
-  list.sort((a,b)=> b.amountNum - a.amountNum);
-  const truncated = list.slice(0,20);
-  writeLeaderboard(truncated);
-}
-function renderLeaderboard(){
-  leaderboardDiv.innerHTML = '';
-  const top = readLeaderboard().slice(0,5);
-  if (top.length === 0) {
-    leaderboardDiv.innerHTML = '<div class="muted" style="text-align:center;">No scores yet. Be the first!</div>';
-    return;
-  }
-  top.forEach((e, idx)=>{
-    const row = document.createElement('div'); row.className = 'lb-row';
-    row.innerHTML = `<div style="min-width:140px; display: flex; align-items: center; gap: 8px;"><span style="color:var(--neon); min-width: 20px;">#${idx+1}</span> ${e.name}</div><div style="flex:1; text-align:right">${e.amount} <span style="color:var(--muted); font-weight:600; margin-left:8px; font-size:12px">${e.date.split(',')[0]}</span></div>`;
-    leaderboardDiv.appendChild(row);
-  });
-}
+    /* -------------------- START, RESET, INIT FLOW -------------------- */
+    function startGame(isPractice = false){
+      try {
+        if (!hasPlayedIntro) {
+          playSound(sndIntro).then(() => { hasPlayedIntro = true; }).catch(() => { hasPlayedIntro = false; });
+        }
+        
+        state.isPracticeMode = isPractice;
+        timerEl.style.display = isPractice ? 'none' : 'block';
+        prizeListEl.style.opacity = isPractice ? '0.5' : '1';
+        document.querySelector('.ladder h3').textContent = isPractice ? 'Practice Mode' : 'Prize Ladder';
 
-saveScoreBtn.addEventListener('click', ()=>{
-  const name = (playerNameInput.value || '').trim();
-  if (name === "") { playerNameInput.placeholder = "Please enter a name first!"; playerNameInput.focus(); return; }
-  saveScore(name, state.finalPrizeLabel);
-  populateRetroCertificate(name, state.finalPrizeLabel);
-  renderLeaderboard();
-  nameEntrySection.style.display = 'none';
-  retroCert.style.display = 'block';
-  leaderboardSection.style.display = 'block';
-  postSaveControls.style.display = 'flex';
-  endScreenNav.style.visibility = 'hidden';
-});
+        startScreen.style.display = 'none';
+        endScreen.style.display = 'none';
+        gameArea.style.display = 'flex';
+        
+        gameArea.classList.remove('fade-in');
+        void gameArea.offsetWidth;
+        gameArea.classList.add('fade-in');
 
-playAgainBtn.addEventListener('click', ()=> {
-    startGame(false);
-});
-
-playAgainEndBtn.addEventListener('click', ()=> {
-    startGame(false);
-});
-
-skipToEndBtn.addEventListener('click', ()=> {
-    endScreen.style.display = 'none';
-    startScreen.style.display = 'flex';
-    playSound(sndIntro);
-});
-
-/* -------------------- PNG CERTIFICATE (canvas) -------------------- */
-certBtn.addEventListener('click', async () => {
-  const name = certNameEl.textContent;
-  certBtn.textContent = 'Generating...';
-  certBtn.disabled = true;
-  await generatePngCertificate(name, state.finalPrizeLabel);
-  certBtn.textContent = 'Get PNG Certificate';
-  certBtn.disabled = false;
-});
-
-async function generatePngCertificate(name, prizeLabel){
-  const canvas = document.createElement('canvas');
-  canvas.width = 1400; canvas.height = 1000;
-  const ctx = canvas.getContext('2d');
-  
-  await document.fonts.load('48px "Press Start 2P"');
-  await document.fonts.load('24px "Press Start 2P"');
-
-  const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-  g.addColorStop(0,'#0f2027'); g.addColorStop(1.0,'#2c5364');
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  ctx.strokeStyle = '#ffdf00'; ctx.lineWidth = 8;
-  ctx.strokeRect(20,20,canvas.width-40,canvas.height-40);
-
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  
-  const num = parseAmount(prizeLabel);
-  let titleText = ""; 
-  if (prizeLabel === "$1,000,000") {
-      titleText = "✨ AI Millionaire! ✨";
-  } else if (num >= 32000) {
-      titleText = "👾 AI Prodigy 👾";
-  } else if (num > 0) {
-      titleText = "🕹️ GenAI Wizard 🕹️";
-  } else {
-      titleText = "Brave Contestant";
-  }
-  
-  ctx.font = '48px "Press Start 2P"'; ctx.fillStyle = '#ffdf00';
-  ctx.fillText(titleText, canvas.width/2, 180);
-
-  ctx.font = '24px "Press Start 2P"'; ctx.fillStyle = '#efefef';
-  ctx.fillText('This certifies that', canvas.width/2, 320);
-
-  ctx.font = '60px "Press Start 2P"'; ctx.fillStyle = '#33ffdd';
-  ctx.fillText(name, canvas.width/2, 420);
-
-  ctx.font = '24px "Press Start 2P"'; ctx.fillStyle = '#efefef';
-  ctx.fillText('Has achieved AI Mastery with winnings of', canvas.width/2, 520);
-  
-  ctx.font = '60px "Press Start 2P"'; ctx.fillStyle = '#33ffdd';
-  ctx.fillText(prizeLabel, canvas.width/2, 620);
-  
-  ctx.font = '24px "Press Start 2P"'; ctx.fillStyle = '#efefef';
-  ctx.fillText(`Date: ${new Date().toLocaleDateString()}`, canvas.width/2, 720);
-
-  const badgeX = canvas.width - 180, badgeY = canvas.height - 180, badgeR = 100;
-  const badgeGrad = ctx.createConicGradient(0, badgeX, badgeY);
-  badgeGrad.addColorStop(0, '#ff00ff');
-  badgeGrad.addColorStop(0.33, '#00ffff');
-  badgeGrad.addColorStop(0.66, '#ffff00');
-  badgeGrad.addColorStop(1, '#ff00ff');
-  ctx.fillStyle = badgeGrad;
-  ctx.beginPath();
-  ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI*2);
-  ctx.fill();
-  
-  ctx.font = '22px "Press Start 2P"'; ctx.fillStyle = '#000000';
-  ctx.fillText('GenAI', badgeX, badgeY - 24);
-  ctx.fillText('Knowledge', badgeX, badgeY);
-  ctx.fillText('Series', badgeX, badgeY + 24);
-  
-  const url = canvas.toDataURL('image/png'); const a = document.createElement('a'); a.href = url;
-  const safe = name.replace(/[^a-z0-9]/gi,'_') || 'player'; a.download = `${safe}_AI_Millionaire_Cert.png`;
-  document.body.appendChild(a); a.click(); a.remove();
-}
-
-/* -------------------- START, RESET, INIT FLOW -------------------- */
-function startGame(isPractice = false){
-  try {
-    if (!hasPlayedIntro) {
-      playSound(sndIntro).then(() => { hasPlayedIntro = true; }).catch(() => { hasPlayedIntro = false; });
+        nameEntrySection.style.display = 'flex';
+        postSaveControls.style.display = 'none';
+        endScreenNav.style.visibility = 'hidden';
+        retroCert.style.display = 'none';
+        leaderboardSection.style.display = 'none';
+        playerNameInput.value = '';
+        playerNameInput.placeholder = 'Enter name for certificate';
+        state.usedLifelines = {'5050':false,'alexa':false,'flip':false};
+        [btn5050, btnAlexa, btnFlip].forEach(b => b.classList.remove('used'));
+        buildRound();
+        state.currentIndex = 0;
+        state.achievedTier = 0;
+        state.finalPrizeLabel = "$0";
+        state.playing = true;
+        renderQuestion();
+        if (!isPractice) {
+          startTimer();
+        }
+      } catch(e) {
+          console.error("Error starting game:", e);
+          gameArea.style.display = 'flex';
+          questionText.textContent = `Error: Game could not start. Please check the console (F12) for details.`;
+      }
     }
-    
-    state.isPracticeMode = isPractice;
-    timerEl.style.display = isPractice ? 'none' : 'block';
-    prizeListEl.style.opacity = isPractice ? '0.5' : '1';
-    document.querySelector('.ladder h3').textContent = isPractice ? 'Practice Mode' : 'Prize Ladder';
 
-    startScreen.style.display = 'none';
-    endScreen.style.display = 'none';
-    gameArea.style.display = 'flex';
-    
-    gameArea.classList.remove('fade-in');
-    void gameArea.offsetWidth;
-    gameArea.classList.add('fade-in');
+    // --- Event Listeners ---
+    const startScreenTooltip = document.getElementById('startScreenTooltip');
 
-    nameEntrySection.style.display = 'flex';
-    postSaveControls.style.display = 'none';
-    endScreenNav.style.visibility = 'hidden';
-    retroCert.style.display = 'none';
-    leaderboardSection.style.display = 'none';
-    playerNameInput.value = '';
-    playerNameInput.placeholder = 'Enter name for certificate';
-    state.usedLifelines = {'5050':false,'alexa':false,'flip':false};
-    [btn5050, btnAlexa, btnFlip].forEach(b => b.classList.remove('used'));
-    buildRound();
-    state.currentIndex = 0;
-    state.achievedTier = 0;
-    state.finalPrizeLabel = "$0";
-    state.playing = true;
-    renderQuestion();
-    if (!isPractice) {
-      startTimer();
-    }
-  } catch(e) {
-      console.error("Error starting game:", e);
-      gameArea.style.display = 'flex';
-      questionText.textContent = `Error: Game could not start. Please check the console (F12) for details.`;
-  }
-}
+    startScreenImg.addEventListener('click', ()=> startGame(false));
+    startScreenImg.addEventListener('mouseover', () => { startScreenTooltip.textContent = 'Click to Play!'; });
 
-// --- Event Listeners ---
-const startScreenTooltip = document.getElementById('startScreenTooltip');
-
-startScreenImg.addEventListener('click', ()=> startGame(false));
-startScreenImg.addEventListener('mouseover', () => { startScreenTooltip.textContent = 'Click to Play!'; });
-
-const playGameBtn = document.getElementById('playGameBtn');
-playGameBtn.addEventListener('click', (event) => {
-  event.stopPropagation();
-  startGame(false);
-});
-playGameBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'Click to Play!'; });
+    const playGameBtn = document.getElementById('playGameBtn');
+    playGameBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      startGame(false);
+    });
+    playGameBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'Click to Play!'; });
 
 
-const practiceBtn = document.getElementById('practiceBtn');
-practiceBtn.addEventListener('click', (event) => {
-  event.stopPropagation();
-  startGame(true);
-});
-practiceBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'No timer, no penalty. Just fun!'; });
+    const practiceBtn = document.getElementById('practiceBtn');
+    practiceBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      startGame(true);
+    });
+    practiceBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'No timer, no penalty. Just fun!'; });
 
-const howToPlayBtn = document.getElementById('howToPlayBtn');
-howToPlayBtn.addEventListener('click', (event)=> {
-  event.stopPropagation();
-  showModal(`<h3>How to Play</h3><p><strong>Play Mode:</strong> Answer 13 questions to win $1,000,000. Get one wrong, and it's game over! Use 3 lifelines to help you. Guaranteed prizes at Q5 ($1,000) and Q10 ($32,000).</p><p><strong>Practice Mode:</strong> A casual way to test your knowledge. There's no timer and no penalty for wrong answers. The game ends after the last question.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Got it!</button></div>`);
-});
-howToPlayBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'View game rules & lifelines'; });
+    const howToPlayBtn = document.getElementById('howToPlayBtn');
+    howToPlayBtn.addEventListener('click', (event)=> {
+      event.stopPropagation();
+      showModal(`<h3>How to Play</h3><p><strong>Play Mode:</strong> Answer 13 questions to win $1,000,000. Get one wrong, and it's game over! Use 3 lifelines to help you. Guaranteed prizes at Q5 ($1,000) and Q10 ($32,000).</p><p><strong>Practice Mode:</strong> A casual way to test your knowledge. There's no timer and no penalty for wrong answers. The game ends after the last question.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Got it!</button></div>`);
+    });
+    howToPlayBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'View game rules & lifelines'; });
 
-volumeSlider.addEventListener('input', (event) => {
-    state.volume = event.target.value;
-    allSounds.forEach(sound => sound.volume = state.volume);
-    // Update the visual fill of the slider track
-    document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
-});
+    volumeSlider.addEventListener('input', (event) => {
+        state.volume = event.target.value;
+        allSounds.forEach(sound => sound.volume = state.volume);
+        // Update the visual fill of the slider track
+        document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
+    });
 
-(function init(){
-  populatePrizeLadder();
-  volumeSlider.value = state.volume;
-  document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
-  allSounds.forEach(sound => sound.volume = state.volume);
-  gameArea.style.display = 'none';
-  endScreen.style.display = 'none';
-  // Try to play intro sound, browser might block it until user interaction
-  playSound(sndIntro).then(() => {
-    hasPlayedIntro = true;
-  }).catch(() => {
-    hasPlayedIntro = false;
-  });
-})();
+    (function init(){
+      populatePrizeLadder();
+      volumeSlider.value = state.volume;
+      document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
+      allSounds.forEach(sound => sound.volume = state.volume);
+      gameArea.style.display = 'none';
+      endScreen.style.display = 'none';
+      // Try to play intro sound, browser might block it until user interaction
+      playSound(sndIntro).then(() => {
+        hasPlayedIntro = true;
+      }).catch(() => {
+        hasPlayedIntro = false;
+      });
+    })();
 
 }); // End of DOMContentLoaded
