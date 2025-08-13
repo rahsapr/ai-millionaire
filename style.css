@@ -312,8 +312,6 @@ input[type="range"]::-moz-range-thumb {
 #nameEntrySection input:focus { border-color: var(--neon); outline: none; box-shadow: 0 0 10px rgba(124, 92, 255, 0.2); }
 #saveScoreBtn { background: linear-gradient(90deg,var(--accent1),#ffd27a); color:#04101a; }
 #postSaveControls { display: flex; gap: 12px; align-items: center; margin-top: 24px; }
-/* #endScreenNav { visibility: hidden; } */ /* Removed rule to fix button visibility */
-/* #endScreenNav.visible { visibility: visible; } */
 
 /* leaderboard table */
 .leaderboard-section {
