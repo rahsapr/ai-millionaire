@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     const AMAZON_QUESTIONS = [
-        {q:"Amazon's own family of foundation models, available in Bedrock, is named what?", choices:["Olympus","Aurora","Nova","Meridian"], a:2, difficulty:1},
+        {q:"Amazon's own family of foundation models, available in Bedrock, is named what?", choices:["Olympus","Aurora","Titan","Meridian"], a:2, difficulty:1},
         {q:"Which AWS service is an AI-powered coding companion, similar to GitHub Copilot?", choices:["CodeCatalyst","Cloud9","CodeWhisperer","CodeDeploy"], a:2, difficulty:1},
         {q:"What is Amazon's conversational AI assistant for businesses, designed to be an 'expert on your business'?", choices:["Alexa for Business","Amazon Expert","Amazon Q","AWS Concierge"], a:2, difficulty:1},
         {q:"What is Amazon Bedrock's primary function?", choices:["A data streaming service","A serverless database","A service to build with foundation models","A cloud-based IDE"], a:2, difficulty:1},
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {q:"Within Amazon Bedrock, what feature allows you to orchestrate tasks by giving the model access to tools and APIs?", choices:["Knowledge Bases","Provisioned Throughput","Agents","Guardrails"], a:2, difficulty:3},
         {q:"What AWS service is a fully managed platform to build, train, and deploy machine learning models at scale?", choices:["Amazon Rekognition","AWS Lambda","Amazon SageMaker","Amazon Polly"], a:2, difficulty:1},
         {q:"What is the primary purpose of 'Knowledge Bases for Amazon Bedrock'?", choices:["To store user conversations","To fine-tune a model's weights","To implement Retrieval-Augmented Generation (RAG)","To cache model responses"], a:2, difficulty:2},
-        {q:"Amazon's Nova Image Generator model includes what built-in responsible AI feature by default?", choices:["Invisible watermarks","Bias detection","Content filtering","Redaction of faces"], a:0, difficulty:3},
+        {q:"Amazon's Titan Image Generator model includes what built-in responsible AI feature by default?", choices:["Invisible watermarks","Bias detection","Content filtering","Redaction of faces"], a:0, difficulty:3},
         {q:"Amazon often describes its generative AI strategy in 'three layers'. What do these layers represent?", choices:["Small, Medium, Large models","Text, Image, Audio models","Infrastructure, Tools/FMs, Applications","Internal, Partner, Open-Source models"], a:2, difficulty:3},
         {q:"The Claude 3 family of models (Haiku, Sonnet, Opus) from Anthropic are prominently featured on which AWS service?", choices:["AWS AI Platform","Amazon Bedrock","Amazon SageMaker","EC2 P5 Instances"], a:1, difficulty:2},
         {q:"Which AWS service uses AI to automatically extract text and data from scanned documents?", choices:["Amazon S3 Select","Amazon Textract","AWS Comprehend","AWS Glue"], a:1, difficulty:1},
@@ -149,8 +149,7 @@ ALL_QUESTIONS.forEach(q => {
     q.a = q.choices.indexOf(correctAnswerText);
 });
 
-
-/* -------------------- STATE & DOM -------------------- */
+// ... rest of the game-logic.js file follows, starting with the state object
 let state = {
   roundQuestions: [], currentIndex:0,
   usedLifelines: {'5050':false,'alexa':false,'flip':false},
@@ -429,7 +428,7 @@ const ALEXA_RESPONSES = [
   "Let me put on my thinking cap... which is a distributed network of servers. They all say it's <strong>%s</strong>.",
   "I could tell you, but then I'd have to... well, nothing really. The answer is <strong>%s</strong>."
 ];
-btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Alexa can be a bit... unpredictable and will give you the right answer 80% of time!', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
+btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Alexa will give you a suggestion. She can be a bit... unpredictable.', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
 
 btnFlip.addEventListener('click', ()=>{ if (state.usedLifelines['flip']) return; confirmLifeline('Flip the Question','Use Flip the Question?','This will replace the current question with a new one of the same difficulty.', ()=>{ state.usedLifelines['flip'] = true; btnFlip.classList.add('used'); playSound(sndLifeline); const currentQ = state.roundQuestions[state.currentIndex]; const sameDifficultyPool = ALL_QUESTIONS.filter(q => q.difficulty === currentQ.difficulty && !state.roundQuestions.some(rq => rq.q === q.q)); if (sameDifficultyPool.length > 0) { const newQ = sameDifficultyPool[Math.floor(Math.random() * sameDifficultyPool.length)]; state.roundQuestions[state.currentIndex] = newQ; setTimeout(renderQuestion, 500); } else { showModal(`<h3>No More Questions!</h3><p>Sorry, there are no more questions of that difficulty left to flip to. Your lifeline was not used.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start">Close</button></div>`); state.usedLifelines['flip'] = false; btnFlip.classList.remove('used'); } }); });
 
@@ -640,6 +639,51 @@ async function generatePngCertificate(name, prizeLabel){
 }
 
 /* -------------------- START, RESET, INIT FLOW -------------------- */
+function startGame(isPractice = false){
+  try {
+    if (!hasPlayedIntro) {
+      playSound(sndIntro).then(() => { hasPlayedIntro = true; }).catch(() => { hasPlayedIntro = false; });
+    }
+    
+    state.isPracticeMode = isPractice;
+    timerEl.style.display = isPractice ? 'none' : 'block';
+    prizeListEl.style.opacity = isPractice ? '0.5' : '1';
+    document.querySelector('.ladder h3').textContent = isPractice ? 'Practice Mode' : 'Prize Ladder';
+
+    startScreen.style.display = 'none';
+    endScreen.style.display = 'none';
+    gameArea.style.display = 'flex';
+    
+    gameArea.classList.remove('fade-in');
+    void gameArea.offsetWidth;
+    gameArea.classList.add('fade-in');
+
+    nameEntrySection.style.display = 'flex';
+    postSaveControls.style.display = 'none';
+    endScreenNav.style.visibility = 'hidden';
+    retroCert.style.display = 'none';
+    leaderboardSection.style.display = 'none';
+    playerNameInput.value = '';
+    playerNameInput.placeholder = 'Enter name for certificate';
+    state.usedLifelines = {'5050':false,'alexa':false,'flip':false};
+    [btn5050, btnAlexa, btnFlip].forEach(b => b.classList.remove('used'));
+    buildRound();
+    state.currentIndex = 0;
+    state.achievedTier = 0;
+    state.finalPrizeLabel = "$0";
+    state.playing = true;
+    renderQuestion();
+    if (!isPractice) {
+      startTimer();
+    }
+  } catch(e) {
+      console.error("Error starting game:", e);
+      gameArea.style.display = 'flex';
+      questionText.textContent = `Error: Game could not start. Please check the console (F12) for details.`;
+  }
+}
+
+// --- Event Listeners ---
 const startScreenTooltip = document.getElementById('startScreenTooltip');
 
 startScreenImg.addEventListener('click', ()=> startGame(false));
@@ -666,45 +710,6 @@ howToPlayBtn.addEventListener('click', (event)=> {
   showModal(`<h3>How to Play</h3><p><strong>Play Mode:</strong> Answer 13 questions to win $1,000,000. Get one wrong, and it's game over! Use 3 lifelines to help you. Guaranteed prizes at Q5 ($1,000) and Q10 ($32,000).</p><p><strong>Practice Mode:</strong> A casual way to test your knowledge. There's no timer and no penalty for wrong answers. The game ends after the last question.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Got it!</button></div>`);
 });
 howToPlayBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'View game rules & lifelines'; });
-
-
-function startGame(isPractice = false){
-  if (!hasPlayedIntro) {
-    playSound(sndIntro).then(() => { hasPlayedIntro = true; }).catch(() => { hasPlayedIntro = false; });
-  }
-  
-  state.isPracticeMode = isPractice;
-  timerEl.style.display = isPractice ? 'none' : 'block';
-  prizeListEl.style.opacity = isPractice ? '0.5' : '1';
-  document.querySelector('.ladder h3').textContent = isPractice ? 'Practice Mode' : 'Prize Ladder';
-
-  startScreen.style.display = 'none';
-  endScreen.style.display = 'none';
-  gameArea.style.display = 'flex';
-  
-  gameArea.classList.remove('fade-in');
-  void gameArea.offsetWidth;
-  gameArea.classList.add('fade-in');
-
-  nameEntrySection.style.display = 'flex';
-  postSaveControls.style.display = 'none';
-  endScreenNav.style.visibility = 'hidden';
-  retroCert.style.display = 'none';
-  leaderboardSection.style.display = 'none';
-  playerNameInput.value = '';
-  playerNameInput.placeholder = 'Enter name for certificate';
-  state.usedLifelines = {'5050':false,'alexa':false,'flip':false};
-  [btn5050, btnAlexa, btnFlip].forEach(b => b.classList.remove('used'));
-  buildRound();
-  state.currentIndex = 0;
-  state.achievedTier = 0;
-  state.finalPrizeLabel = "$0";
-  state.playing = true;
-  renderQuestion();
-  if (!isPractice) {
-    startTimer();
-  }
-}
 
 volumeSlider.addEventListener('input', (event) => {
     state.volume = event.target.value;
