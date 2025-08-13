@@ -1,3 +1,8 @@
+console.log("----- DIAGNOSTIC TEST -----");
+console.log("Document readyState:", document.readyState);
+console.log("gameArea element:", document.getElementById('gameArea'));
+console.log("--------------------------");
+
 // --- FIX: Wrap the entire script in this event listener ---
 document.addEventListener('DOMContentLoaded', () => {
 
