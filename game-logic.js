@@ -1,4 +1,4 @@
-// --- FIX: The entire script is now correctly wrapped in this event listener ---
+// --- FIX: Wrap the entire script in this event listener to ensure HTML is fully loaded ---
 document.addEventListener('DOMContentLoaded', () => {
 
     /* -------------------- GAME DATA -------------------- */
@@ -148,9 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // ... [The rest of the entire game-logic.js file goes here, exactly as it was in the previous response] ...
-    // The following is the remainder of the script.
-
+    /* -------------------- STATE & DOM -------------------- */
     let state = {
       roundQuestions: [], currentIndex:0,
       usedLifelines: {'5050':false,'alexa':false,'flip':false},
