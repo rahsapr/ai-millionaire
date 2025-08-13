@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;900&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
-<!-- Link to your new CSS file -->
+<!-- Link to your CSS file -->
 <link rel="stylesheet" href="style.css">
 
 </head>
@@ -103,8 +103,8 @@
           <button id="certBtn" class="btn btn-ghost">Get PNG Certificate</button>
           <button id="playAgainBtn" class="btn btn-ghost">Play Again</button>
         </div>
-        <!-- NEW BUTTONS ON END SCREEN -->
-        <div id="endScreenNav" style="display:flex; gap:10px; align-items:center; margin-top: 12px; visibility: hidden;">
+        <!-- FIX: Removed the faulty `visibility: hidden;` inline style -->
+        <div id="endScreenNav" style="display:flex; gap:10px; align-items:center; margin-top: 12px;">
             <button id="skipToEndBtn" class="btn btn-ghost">Skip to Home</button>
             <button id="playAgainEndBtn" class="btn btn-ghost">Play Again</button>
         </div>
