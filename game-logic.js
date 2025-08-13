@@ -151,7 +151,7 @@ QUESTION_BANK = QUESTION_BANK.concat(AMAZON_QUESTIONS);
 let state = {
   roundQuestions: [], currentIndex:0,
   usedLifelines: {'5050':false,'alexa':false,'flip':false},
-  timerRef:null, timeLeft:30, volume: 0.5, playing:false,
+  timerRef:null, timeLeft:30, volume: 0.5, playing:false, isPracticeMode: false,
   achievedTier:0, finalPrizeLabel:"$0"
 };
 
@@ -167,7 +167,8 @@ const startScreen = document.getElementById('startScreen'),
       prizeListEl = document.getElementById('prizeList'), currentPrizeEl = document.getElementById('currentPrize'),
       modalRoot = document.getElementById('modalRoot'), finalOverlay = document.getElementById('finalOverlay'),
       finalChoiceText = document.getElementById('finalChoice'), finalConfirm = document.getElementById('finalConfirm'), finalCancel = document.getElementById('finalCancel'),
-      confettiContainer = document.getElementById('confetti'), winContainer = document.getElementById('winContainer');
+      confettiContainer = document.getElementById('confetti'), winContainer = document.getElementById('winContainer'),
+      practiceEndContainer = document.getElementById('practiceEndContainer');
 
 // --- End Screen Elements ---
 const endScreen = document.getElementById('endScreen'), endTitle = document.getElementById('endTitle'),
@@ -177,6 +178,9 @@ const endScreen = document.getElementById('endScreen'), endTitle = document.getE
       saveScoreBtn = document.getElementById('saveScoreBtn'),
       postSaveControls = document.getElementById('postSaveControls'),
       certBtn = document.getElementById('certBtn'), playAgainBtn = document.getElementById('playAgainBtn'),
+      endScreenNav = document.getElementById('endScreenNav'),
+      skipToEndBtn = document.getElementById('skipToEndBtn'),
+      playAgainEndBtn = document.getElementById('playAgainEndBtn'),
       leaderboardSection = document.getElementById('leaderboardSection'),
       leaderboardDiv = document.getElementById('leaderboard');
 
@@ -263,9 +267,12 @@ function renderQuestion(){
     btn.addEventListener('click', ()=> onAnswerClicked(btn, i));
     answersEl.appendChild(btn);
   });
-  highlightPrize(); setTime(30);
-  stopSound(sndFinal); stopSound(sndCorrectRS); stopSound(sndWrongRS); stopSound(sndLowTime);
-  playSound(sndSuspense);
+  highlightPrize(); 
+  if (!state.isPracticeMode) {
+      setTime(30);
+      stopSound(sndFinal); stopSound(sndCorrectRS); stopSound(sndWrongRS); stopSound(sndLowTime);
+      playSound(sndSuspense);
+  }
 }
 
 /* -------------------- TIMER -------------------- */
@@ -297,11 +304,16 @@ let pendingAnswerBtn = null, pendingAnswerIndex = null;
 function onAnswerClicked(btnEl, index){
   if (btnEl.classList.contains('disabled')) return;
   stopSound(sndLowTime);
-  pauseTimer();
-  pendingAnswerBtn = btnEl; pendingAnswerIndex = index;
-  finalChoiceText.innerHTML = `You selected: <strong>${String.fromCharCode(65+index)}: ${btnEl.querySelector('.text').textContent}</strong>`;
-  finalOverlay.style.display = 'flex';
-  finalConfirm.focus(); playSound(sndFinal);
+  if (!state.isPracticeMode) {
+      pauseTimer();
+      pendingAnswerBtn = btnEl; pendingAnswerIndex = index;
+      finalChoiceText.innerHTML = `You selected: <strong>${String.fromCharCode(65+index)}: ${btnEl.querySelector('.text').textContent}</strong>`;
+      finalOverlay.style.display = 'flex';
+      finalConfirm.focus(); playSound(sndFinal);
+  } else {
+      Array.from(answersEl.children).forEach(b => b.classList.add('disabled'));
+      evaluateAnswer(index, btnEl);
+  }
 }
 finalCancel.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; pendingAnswerBtn = null; pendingAnswerIndex = null; Array.from(answersEl.children).forEach(b => b.classList.remove('disabled')); startTimer(); });
 finalConfirm.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; if (!pendingAnswerBtn) { startTimer(); return; } Array.from(answersEl.children).forEach(b => b.classList.add('disabled')); setTimeout(()=> evaluateAnswer(pendingAnswerIndex, pendingAnswerBtn), 600); });
@@ -309,6 +321,22 @@ finalConfirm.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'
 function evaluateAnswer(chosenIndex, btnEl){
   const q = state.roundQuestions[state.currentIndex];
   const isCorrect = chosenIndex === q.a;
+
+  if (state.isPracticeMode) {
+      const corr = Array.from(answersEl.children).find(b => Number(b.dataset.index) === q.a);
+      if(corr) corr.classList.add('correct');
+      if (!isCorrect) btnEl.classList.add('wrong');
+      playSound(isCorrect ? sndCorrectRS : sndWrongRS);
+
+      if (state.currentIndex >= state.roundQuestions.length - 1) {
+          setTimeout(endPracticeMode, 2000);
+      } else {
+          setTimeout(()=>{ state.currentIndex++; renderQuestion(); }, 2000);
+      }
+      return;
+  }
+
+  // --- REGULAR MODE LOGIC ---
   if (isCorrect){
     btnEl.classList.add('correct'); playSound(sndCorrectRS);
     state.achievedTier = state.currentIndex + 1;
@@ -408,8 +436,12 @@ walkAwayBtn.addEventListener('click', ()=>{
   stopSound(sndLowTime);
   pauseTimer(); stopSound(sndSuspense); playSound(sndFinal);
   const currentWinnings = state.currentIndex > 0 ? prizeForIndex(state.currentIndex - 1) : "$0";
+  if (state.isPracticeMode) {
+      endPracticeMode();
+      return;
+  }
   showModal(`<h3>Walk Away?</h3><p>Are you sure you want to walk away? You will leave with your current winnings of <strong>${currentWinnings}</strong>.</p><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button id="modalCancel" class="btn btn-ghost">No, Keep Playing</button><button id="modalConfirmWalk" class="btn btn-start">Yes, Walk Away</button></div>`);
-  document.getElementById('modalCancel').addEventListener('click', ()=>{ modalRoot.style.display='none'; startTimer(); });
+  document.getElementById('modalCancel').addEventListener('click', ()=>{ modalRoot.style.display='none'; if(!state.isPracticeMode) startTimer(); });
   document.getElementById('modalConfirmWalk').addEventListener('click', ()=>{ modalRoot.style.display='none'; endGame('walkaway', currentWinnings); });
 });
 
@@ -436,6 +468,22 @@ function endGame(reason, amountLabel){
   state.finalPrizeLabel = amountLabel || "$0";
   playSound(sndFinal);
   playerNameInput.focus();
+  endScreenNav.classList.add('visible');
+}
+
+function endPracticeMode() {
+    const overlay = document.createElement('div');
+    overlay.id = 'practiceEndOverlay';
+    overlay.innerHTML = `<img src="images/practice_mode.gif" alt="Practice Complete!">`;
+    practiceEndContainer.appendChild(overlay);
+
+    setTimeout(() => {
+        practiceEndContainer.innerHTML = '';
+        gameArea.style.display = 'none';
+        endScreen.style.display = 'none';
+        startScreen.style.display = 'flex';
+        playSound(sndIntro);
+    }, 6000);
 }
 
 function populateRetroCertificate(name, prizeLabel) {
@@ -493,10 +541,21 @@ saveScoreBtn.addEventListener('click', ()=>{
   retroCert.style.display = 'block';
   leaderboardSection.style.display = 'block';
   postSaveControls.style.display = 'flex';
+  endScreenNav.classList.remove('visible');
 });
 
 playAgainBtn.addEventListener('click', ()=> {
-    startGame();
+    startGame(false);
+});
+
+playAgainEndBtn.addEventListener('click', ()=> {
+    startGame(false);
+});
+
+skipToEndBtn.addEventListener('click', ()=> {
+    endScreen.style.display = 'none';
+    startScreen.style.display = 'flex';
+    playSound(sndIntro);
 });
 
 /* -------------------- PNG CERTIFICATE (canvas) -------------------- */
@@ -579,27 +638,42 @@ async function generatePngCertificate(name, prizeLabel){
 }
 
 /* -------------------- START, RESET, INIT FLOW -------------------- */
-startScreenImg.addEventListener('click', ()=> startGame());
+const startScreenTooltip = document.getElementById('startScreenTooltip');
+
+startScreenImg.addEventListener('click', ()=> startGame(false));
+startScreenImg.addEventListener('mouseover', () => { startScreenTooltip.textContent = 'Click to Play!'; });
 
 const playGameBtn = document.getElementById('playGameBtn');
 playGameBtn.addEventListener('click', (event) => {
-  event.stopPropagation(); // Good practice to prevent bubbling
-  startGame();
+  event.stopPropagation();
+  startGame(false);
 });
+playGameBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'Click to Play!'; });
+
+const practiceBtn = document.getElementById('practiceBtn');
+practiceBtn.addEventListener('click', (event) => {
+  event.stopPropagation();
+  startGame(true);
+});
+practiceBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'No timer, no penalty. Just fun!'; });
 
 const howToPlayBtn = document.getElementById('howToPlayBtn');
 howToPlayBtn.addEventListener('click', (event)=> {
-  event.stopPropagation(); // Prevents the game from starting when clicking this button
-  showModal(`<h3>How to Play</h3><p>Answer 13 multiple-choice questions on AI to win $1,000,000. You have 30 seconds per question, but the timer will pause when you select an answer to give you a moment to confirm.</p><p>You have 3 lifelines: <strong>50:50</strong>, <strong>Ask Alexa</strong>, and <strong>Flip the Question</strong>.</p><p>There are two guaranteed prize levels: <strong>$1,000</strong> (Question 5) and <strong>$32,000</strong> (Question 10). If you get an answer wrong, you'll walk away with the last guaranteed amount you passed. Good luck!</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Got it!</button></div>`);
+  event.stopPropagation();
+  showModal(`<h3>How to Play</h3><p><strong>Play Mode:</strong> Answer 13 questions to win $1,000,000. Get one wrong, and it's game over! Use 3 lifelines to help you. Guaranteed prizes at Q5 ($1,000) and Q10 ($32,000).</p><p><strong>Practice Mode:</strong> A casual way to test your knowledge. There's no timer and no penalty for wrong answers. The game ends after the last question.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Got it!</button></div>`);
 });
+howToPlayBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'View game rules & lifelines'; });
 
-
-function startGame(){
+function startGame(isPractice = false){
   if (!hasPlayedIntro) {
-    playSound(sndIntro);
-    hasPlayedIntro = true;
+    playSound(sndIntro).then(() => { hasPlayedIntro = true; }).catch(() => { hasPlayedIntro = false; });
   }
   
+  state.isPracticeMode = isPractice;
+  timerEl.style.display = isPractice ? 'none' : 'block';
+  prizeListEl.style.opacity = isPractice ? '0.5' : '1';
+  document.querySelector('.ladder h3').textContent = isPractice ? 'Practice Mode' : 'Prize Ladder';
+
   startScreen.style.display = 'none';
   endScreen.style.display = 'none';
   gameArea.style.display = 'flex';
@@ -610,6 +684,7 @@ function startGame(){
 
   nameEntrySection.style.display = 'flex';
   postSaveControls.style.display = 'none';
+  endScreenNav.classList.remove('visible');
   retroCert.style.display = 'none';
   leaderboardSection.style.display = 'none';
   playerNameInput.value = '';
@@ -622,13 +697,14 @@ function startGame(){
   state.finalPrizeLabel = "$0";
   state.playing = true;
   renderQuestion();
-  startTimer();
+  if (!isPractice) {
+    startTimer();
+  }
 }
 
 volumeSlider.addEventListener('input', (event) => {
     state.volume = event.target.value;
     allSounds.forEach(sound => sound.volume = state.volume);
-    // Update the visual fill of the slider track
     document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
 });
 
