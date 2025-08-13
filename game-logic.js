@@ -315,8 +315,8 @@ function onAnswerClicked(btnEl, index){
       evaluateAnswer(index, btnEl);
   }
 }
-finalCancel.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; pendingAnswerBtn = null; pendingAnswerIndex = null; Array.from(answersEl.children).forEach(b => b.classList.remove('disabled')); startTimer(); });
-finalConfirm.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; if (!pendingAnswerBtn) { startTimer(); return; } Array.from(answersEl.children).forEach(b => b.classList.add('disabled')); setTimeout(()=> evaluateAnswer(pendingAnswerIndex, pendingAnswerBtn), 600); });
+finalCancel.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; pendingAnswerBtn = null; pendingAnswerIndex = null; Array.from(answersEl.children).forEach(b => b.classList.remove('disabled')); if(!state.isPracticeMode) startTimer(); });
+finalConfirm.addEventListener('click', ()=>{ finalOverlay.style.display = 'none'; if (!pendingAnswerBtn) { if(!state.isPracticeMode) startTimer(); return; } Array.from(answersEl.children).forEach(b => b.classList.add('disabled')); setTimeout(()=> evaluateAnswer(pendingAnswerIndex, pendingAnswerBtn), 600); });
 
 function evaluateAnswer(chosenIndex, btnEl){
   const q = state.roundQuestions[state.currentIndex];
@@ -650,6 +650,7 @@ playGameBtn.addEventListener('click', (event) => {
 });
 playGameBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'Click to Play!'; });
 
+
 const practiceBtn = document.getElementById('practiceBtn');
 practiceBtn.addEventListener('click', (event) => {
   event.stopPropagation();
@@ -663,6 +664,7 @@ howToPlayBtn.addEventListener('click', (event)=> {
   showModal(`<h3>How to Play</h3><p><strong>Play Mode:</strong> Answer 13 questions to win $1,000,000. Get one wrong, and it's game over! Use 3 lifelines to help you. Guaranteed prizes at Q5 ($1,000) and Q10 ($32,000).</p><p><strong>Practice Mode:</strong> A casual way to test your knowledge. There's no timer and no penalty for wrong answers. The game ends after the last question.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Got it!</button></div>`);
 });
 howToPlayBtn.addEventListener('mouseover', (event) => { event.stopPropagation(); startScreenTooltip.textContent = 'View game rules & lifelines'; });
+
 
 function startGame(isPractice = false){
   if (!hasPlayedIntro) {
@@ -705,6 +707,7 @@ function startGame(isPractice = false){
 volumeSlider.addEventListener('input', (event) => {
     state.volume = event.target.value;
     allSounds.forEach(sound => sound.volume = state.volume);
+    // Update the visual fill of the slider track
     document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
 });
 
