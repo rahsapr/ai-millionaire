@@ -137,6 +137,7 @@ const ALL_QUESTIONS = GENERAL_QUESTIONS.concat(AMAZON_QUESTIONS);
 
 // --- SHUFFLE ANSWER CHOICES FOR FAIR DISTRIBUTION ---
 ALL_QUESTIONS.forEach(q => {
+    if (!q.choices || typeof q.a === 'undefined') return; // Defensive check
     const correctAnswerText = q.choices[q.a];
     // Fisher-Yates shuffle algorithm
     for (let i = q.choices.length - 1; i > 0; i--) {
@@ -145,6 +146,7 @@ ALL_QUESTIONS.forEach(q => {
     }
     q.a = q.choices.indexOf(correctAnswerText);
 });
+
 
 /* -------------------- STATE & DOM -------------------- */
 let state = {
@@ -425,7 +427,7 @@ const ALEXA_RESPONSES = [
   "Let me put on my thinking cap... which is a distributed network of servers. They all say it's <strong>%s</strong>.",
   "I could tell you, but then I'd have to... well, nothing really. The answer is <strong>%s</strong>."
 ];
-btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Alexa will give you a suggestion. She can be a bit... unpredictable.', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
+btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Alexa will give you a suggestion. She is programmed to be right 80% of the time and is a bit... unpredictable.', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
 
 btnFlip.addEventListener('click', ()=>{ if (state.usedLifelines['flip']) return; confirmLifeline('Flip the Question','Use Flip the Question?','This will replace the current question with a new one of the same difficulty.', ()=>{ state.usedLifelines['flip'] = true; btnFlip.classList.add('used'); playSound(sndLifeline); const currentQ = state.roundQuestions[state.currentIndex]; const sameDifficultyPool = ALL_QUESTIONS.filter(q => q.difficulty === currentQ.difficulty && !state.roundQuestions.some(rq => rq.q === q.q)); if (sameDifficultyPool.length > 0) { const newQ = sameDifficultyPool[Math.floor(Math.random() * sameDifficultyPool.length)]; state.roundQuestions[state.currentIndex] = newQ; setTimeout(renderQuestion, 500); } else { showModal(`<h3>No More Questions!</h3><p>Sorry, there are no more questions of that difficulty left to flip to. Your lifeline was not used.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start">Close</button></div>`); state.usedLifelines['flip'] = false; btnFlip.classList.remove('used'); } }); });
 
@@ -466,7 +468,7 @@ function endGame(reason, amountLabel){
   endPrize.textContent = amountLabel || "$0";
   state.finalPrizeLabel = amountLabel || "$0";
   playerNameInput.focus();
-  endScreenNav.style.visibility = 'visible';
+  endScreenNav.style.visibility = 'visible'; // FIX: Ensure nav is visible
 }
 
 function endPracticeMode() {
