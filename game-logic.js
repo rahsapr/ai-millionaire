@@ -27,7 +27,7 @@ const AMAZON_QUESTIONS = [
     {q:"AWS's AI-powered service for identifying objects, people, text, and activities in images and videos is called:", choices:["Amazon Lookout","Amazon Rekognition","AWS Panorama","Amazon Inspector"], a:1, difficulty:1}
 ];
 
-let QUESTION_BANK = [
+const GENERAL_QUESTIONS = [
 // --- NEW, HIGH-QUALITY QUESTIONS ---
 {q:"What is the key difference between AWS Trainium and Inferentia chips?", choices:["Trainium is high-cost; Inferentia is low-cost.","Trainium is for text; Inferentia is for images.","Trainium is for model training; Inferentia is for inference.","Trainium uses ARM; Inferentia uses x86 architecture."], a:2, difficulty:2},
 {q:"In a Mixture-of-Experts (MoE) model, what does the 'gating network' do?", choices:["Loads all model parameters into memory.","Routes each input token to the best expert.","Applies the final activation function to the output.","Aggregates the final outputs from all experts."], a:1, difficulty:3},
@@ -132,8 +132,11 @@ let QUESTION_BANK = [
 {q:"Which improves LLM factuality?", choices:["RAG, grounding & human feedback","Only more tokens","Only more GPUs","Only higher temperature"], a:0, difficulty:3}
 ];
 
+// --- FIX: Correctly combine all question banks into one master list ---
+let ALL_QUESTIONS = GENERAL_QUESTIONS.concat(AMAZON_QUESTIONS);
+
 // --- SHUFFLE ANSWER CHOICES FOR FAIR DISTRIBUTION ---
-QUESTION_BANK.forEach(q => {
+ALL_QUESTIONS.forEach(q => {
     const correctAnswerText = q.choices[q.a];
     // Fisher-Yates shuffle algorithm
     for (let i = q.choices.length - 1; i > 0; i--) {
@@ -142,10 +145,6 @@ QUESTION_BANK.forEach(q => {
     }
     q.a = q.choices.indexOf(correctAnswerText);
 });
-
-
-// Combine the question banks
-QUESTION_BANK = QUESTION_BANK.concat(AMAZON_QUESTIONS);
 
 /* -------------------- STATE & DOM -------------------- */
 let state = {
@@ -239,9 +238,9 @@ function guaranteedAtIndex(idx){ if(idx < 0) return "$0"; let g="$0"; for(let i=
 
 /* -------------------- ROUND BUILDER -------------------- */
 function buildRound(){
-  const easy = QUESTION_BANK.filter(q=>q.difficulty===1).slice();
-  const med = QUESTION_BANK.filter(q=>q.difficulty===2).slice();
-  const hard = QUESTION_BANK.filter(q=>q.difficulty===3).slice();
+  const easy = ALL_QUESTIONS.filter(q=>q.difficulty===1).slice();
+  const med = ALL_QUESTIONS.filter(q=>q.difficulty===2).slice();
+  const hard = ALL_QUESTIONS.filter(q=>q.difficulty===3).slice();
   function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
   shuffle(easy); shuffle(med); shuffle(hard);
   const selected = [].concat(easy.slice(0,4), med.slice(0,5), hard.slice(0,4));
@@ -428,7 +427,7 @@ const ALEXA_RESPONSES = [
 ];
 btnAlexa.addEventListener('click', ()=>{ if (state.usedLifelines['alexa']) return; confirmLifeline('Ask Alexa','Use Ask Alexa?','Alexa will give you a suggestion. She can be a bit... unpredictable.', ()=>{ state.usedLifelines['alexa'] = true; btnAlexa.classList.add('used'); playSound(sndLifeline); const q = state.roundQuestions[state.currentIndex]; const accurate = Math.random() < 0.78; const suggestion = accurate ? q.a : [0,1,2,3].filter(i=>i!==q.a)[Math.floor(Math.random()*3)]; const randomResponse = ALEXA_RESPONSES[Math.floor(Math.random() * ALEXA_RESPONSES.length)]; const formattedResponse = randomResponse.replace('%s', String.fromCharCode(65+suggestion)); showModal(`<h3>Alexa's Response</h3><div style="margin-top:10px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-weight:800; text-align:center;font-size:18px;">"${formattedResponse}"</div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start" style="padding:10px 16px">Thanks, Alexa</button></div>`); }); });
 
-btnFlip.addEventListener('click', ()=>{ if (state.usedLifelines['flip']) return; confirmLifeline('Flip the Question','Use Flip the Question?','This will replace the current question with a new one of the same difficulty.', ()=>{ state.usedLifelines['flip'] = true; btnFlip.classList.add('used'); playSound(sndLifeline); const currentQ = state.roundQuestions[state.currentIndex]; const sameDifficultyPool = QUESTION_BANK.filter(q => q.difficulty === currentQ.difficulty && !state.roundQuestions.some(rq => rq.q === q.q)); if (sameDifficultyPool.length > 0) { const newQ = sameDifficultyPool[Math.floor(Math.random() * sameDifficultyPool.length)]; state.roundQuestions[state.currentIndex] = newQ; setTimeout(renderQuestion, 500); } else { showModal(`<h3>No More Questions!</h3><p>Sorry, there are no more questions of that difficulty left to flip to. Your lifeline was not used.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start">Close</button></div>`); state.usedLifelines['flip'] = false; btnFlip.classList.remove('used'); } }); });
+btnFlip.addEventListener('click', ()=>{ if (state.usedLifelines['flip']) return; confirmLifeline('Flip the Question','Use Flip the Question?','This will replace the current question with a new one of the same difficulty.', ()=>{ state.usedLifelines['flip'] = true; btnFlip.classList.add('used'); playSound(sndLifeline); const currentQ = state.roundQuestions[state.currentIndex]; const sameDifficultyPool = ALL_QUESTIONS.filter(q => q.difficulty === currentQ.difficulty && !state.roundQuestions.some(rq => rq.q === q.q)); if (sameDifficultyPool.length > 0) { const newQ = sameDifficultyPool[Math.floor(Math.random() * sameDifficultyPool.length)]; state.roundQuestions[state.currentIndex] = newQ; setTimeout(renderQuestion, 500); } else { showModal(`<h3>No More Questions!</h3><p>Sorry, there are no more questions of that difficulty left to flip to. Your lifeline was not used.</p><div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="modalClose" class="btn btn-start">Close</button></div>`); state.usedLifelines['flip'] = false; btnFlip.classList.remove('used'); } }); });
 
 
 /* -------------------- WALK AWAY & END GAME -------------------- */
@@ -466,9 +465,8 @@ function endGame(reason, amountLabel){
   endTitle.textContent = title;
   endPrize.textContent = amountLabel || "$0";
   state.finalPrizeLabel = amountLabel || "$0";
-  playSound(sndFinal);
   playerNameInput.focus();
-  endScreenNav.classList.add('visible');
+  endScreenNav.style.visibility = 'visible';
 }
 
 function endPracticeMode() {
@@ -541,7 +539,7 @@ saveScoreBtn.addEventListener('click', ()=>{
   retroCert.style.display = 'block';
   leaderboardSection.style.display = 'block';
   postSaveControls.style.display = 'flex';
-  endScreenNav.classList.remove('visible');
+  endScreenNav.style.visibility = 'hidden';
 });
 
 playAgainBtn.addEventListener('click', ()=> {
@@ -686,7 +684,7 @@ function startGame(isPractice = false){
 
   nameEntrySection.style.display = 'flex';
   postSaveControls.style.display = 'none';
-  endScreenNav.classList.remove('visible');
+  endScreenNav.style.visibility = 'hidden';
   retroCert.style.display = 'none';
   leaderboardSection.style.display = 'none';
   playerNameInput.value = '';
