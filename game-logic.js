@@ -7,7 +7,7 @@ const PRIZES = [
 ];
 
 const AMAZON_QUESTIONS = [
-    {q:"Amazon's own family of foundation models, available in Bedrock, is named what?", choices:["Olympus","Aurora","Titan","Meridian"], a:2, difficulty:1},
+    {q:"Amazon's own family of foundation models, available in Bedrock, is named what?", choices:["Olympus","Aurora","Nova","Meridian"], a:2, difficulty:1},
     {q:"Which AWS service is an AI-powered coding companion, similar to GitHub Copilot?", choices:["CodeCatalyst","Cloud9","CodeWhisperer","CodeDeploy"], a:2, difficulty:1},
     {q:"What is Amazon's conversational AI assistant for businesses, designed to be an 'expert on your business'?", choices:["Alexa for Business","Amazon Expert","Amazon Q","AWS Concierge"], a:2, difficulty:1},
     {q:"What is Amazon Bedrock's primary function?", choices:["A data streaming service","A serverless database","A service to build with foundation models","A cloud-based IDE"], a:2, difficulty:1},
@@ -133,7 +133,7 @@ const GENERAL_QUESTIONS = [
 ];
 
 // --- FIX: Correctly combine all question banks into one master list ---
-let ALL_QUESTIONS = GENERAL_QUESTIONS.concat(AMAZON_QUESTIONS);
+const ALL_QUESTIONS = GENERAL_QUESTIONS.concat(AMAZON_QUESTIONS);
 
 // --- SHUFFLE ANSWER CHOICES FOR FAIR DISTRIBUTION ---
 ALL_QUESTIONS.forEach(q => {
