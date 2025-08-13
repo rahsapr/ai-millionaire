@@ -1,5 +1,6 @@
-// --- FIX: Wrap the entire script in this event listener to ensure HTML is fully loaded ---
-document.addEventListener('DOMContentLoaded', () => {
+// --- FIX: The entire script is now wrapped in a self-executing function ---
+// This runs automatically the moment the file is loaded by init.js
+(function initializeGame() {
 
     /* -------------------- GAME DATA -------------------- */
     const PRIZES = [
@@ -148,7 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    /* -------------------- STATE & DOM -------------------- */
+    // ... [The rest of the entire game-logic.js file goes here, exactly as it was in the previous response] ...
+    // The following is the remainder of the script.
+
     let state = {
       roundQuestions: [], currentIndex:0,
       usedLifelines: {'5050':false,'alexa':false,'flip':false},
@@ -710,7 +713,6 @@ document.addEventListener('DOMContentLoaded', () => {
     volumeSlider.addEventListener('input', (event) => {
         state.volume = event.target.value;
         allSounds.forEach(sound => sound.volume = state.volume);
-        // Update the visual fill of the slider track
         document.documentElement.style.setProperty('--volume-progress', `${state.volume * 100}%`);
     });
 
