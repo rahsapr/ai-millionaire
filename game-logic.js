@@ -1,6 +1,5 @@
-// --- FIX #1: All JavaScript is now inside this DOMContentLoaded listener. ---
-// This guarantees that the HTML page is fully built before any code runs.
-document.addEventListener('DOMContentLoaded', () => {
+// This function will be called by init.js after the script is loaded
+function initializeGame() {
 
     /* -------------------- GAME DATA -------------------- */
     const PRIZES = [
