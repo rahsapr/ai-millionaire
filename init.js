@@ -41,16 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check if the script is already loaded to avoid duplicates
         if (document.querySelector('script[src="game-logic.js"]')) {
-             // If it exists, we assume the game logic is available and we can just call a global start function
-             // This requires a small change in game-logic.js to expose the start function
              if(window.initializeGame) window.initializeGame();
         } else {
-            // Create a new script element
             const gameScript = document.createElement('script');
             gameScript.src = 'game-logic.js';
-            gameScript.defer = true;
-            // Append it to the head to start downloading and executing
-            document.head.appendChild(gameScript);
+            // When the script is loaded, the initializeGame function inside it will run automatically.
+            document.body.appendChild(gameScript);
         }
     }
 
